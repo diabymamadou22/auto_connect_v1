@@ -1,0 +1,13 @@
+allprojects {
+  repositories {
+    mavenCentral()
+    google()
+  }
+}
+settingsEvaluated { settings ->
+  settings.pluginManagement.repositories {
+    mavenCentral()
+    google()
+    gradlePluginPortal()
+  }
+}
