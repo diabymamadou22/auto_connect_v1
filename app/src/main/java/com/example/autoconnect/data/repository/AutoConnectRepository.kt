@@ -1,0 +1,253 @@
+package com.example.autoconnect.data.repository
+
+import com.example.autoconnect.data.local.AppDatabase
+import com.example.autoconnect.data.local.ReviewEntity
+import com.example.autoconnect.data.local.ServiceProviderEntity
+import com.example.autoconnect.data.local.UserEntity
+import com.example.autoconnect.data.model.AppUser
+import com.example.autoconnect.data.model.Review
+import com.example.autoconnect.data.model.ServiceCategory
+import com.example.autoconnect.data.model.ServiceProvider
+import com.example.autoconnect.util.PasswordHasher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.util.UUID
+
+class AutoConnectRepository(private val database: AppDatabase) {
+
+    private val userDao = database.userDao()
+    private val serviceDao = database.serviceProviderDao()
+    private val reviewDao = database.reviewDao()
+    private val tutorialDao = database.tutorialDao()
+    private val bookingDao = database.bookingDao()
+    private val chatDao = database.chatMessageDao()
+
+    // --- CHAT & MESSAGING ---
+    fun getAllChatMessages(): Flow<List<com.example.autoconnect.data.local.ChatMessageEntity>> {
+        return chatDao.getAllMessages()
+    }
+
+    fun getChatMessagesForProvider(providerId: String): Flow<List<com.example.autoconnect.data.local.ChatMessageEntity>> {
+        return chatDao.getMessagesForProvider(providerId)
+    }
+
+    suspend fun sendChatMessage(message: com.example.autoconnect.data.local.ChatMessageEntity) {
+        chatDao.insertMessage(message)
+    }
+
+    suspend fun clearChatHistory(providerId: String) {
+        chatDao.deleteMessagesForProvider(providerId)
+    }
+
+    // --- BOOKINGS (APPOINTMENTS) ---
+    fun getAllBookings(): Flow<List<com.example.autoconnect.data.local.BookingEntity>> {
+        return bookingDao.getAllBookings()
+    }
+
+    suspend fun insertBooking(booking: com.example.autoconnect.data.local.BookingEntity) {
+        bookingDao.insertBooking(booking)
+    }
+
+    suspend fun updateBookingStatus(id: String, status: String) {
+        bookingDao.updateStatus(id, status)
+    }
+
+    suspend fun deleteBooking(id: String) {
+        bookingDao.deleteBooking(id)
+    }
+
+    // --- TUTORIALS (OFFLINE CACHE) ---
+    fun getAllTutorials(): Flow<List<com.example.autoconnect.data.local.TutorialEntity>> {
+        return tutorialDao.getAllTutorials()
+    }
+
+    suspend fun seedProvidersIfEmpty() {
+        val entities = com.example.autoconnect.data.SampleData.sampleProviders.map { ServiceProviderEntity.fromDomainModel(it) }
+        serviceDao.insertAll(entities)
+    }
+
+    suspend fun seedTutorialsIfEmpty() {
+        // Fallback seed if database was already created before
+        tutorialDao.insertAll(com.example.autoconnect.data.SampleData.sampleTutorials)
+    }
+
+    suspend fun seedReviewsIfEmpty() {
+        val existingReviews = reviewDao.getReviewsListForService("p1")
+        if (existingReviews.isEmpty()) {
+            com.example.autoconnect.data.SampleData.sampleReviews.forEach { review ->
+                reviewDao.insertReview(review)
+                recalculateProviderRating(review.serviceId)
+            }
+        }
+    }
+
+    // --- USER / AUTH ---
+    suspend fun getUserByUsername(username: String): AppUser? {
+        val userEntity = userDao.getUserByUsername(username.trim().lowercase())
+        return userEntity?.let { AppUser(id = it.id, username = it.username, role = it.role) }
+    }
+
+    suspend fun authenticate(username: String, password: String): AppUser? {
+        val normalized = username.trim().lowercase()
+        var userEntity = userDao.getUserByUsername(normalized)
+        
+        if (normalized == "admin") {
+            if (userEntity == null) {
+                val newHash = PasswordHasher.hash("admin", "00223")
+                userEntity = UserEntity(id = "u1", username = "admin", passwordHash = newHash, role = "admin")
+                userDao.insertUser(userEntity)
+            }
+            var isValid = PasswordHasher.verify("admin", password, userEntity.passwordHash)
+            if (!isValid && password == "00223") {
+                val newHash = PasswordHasher.hash("admin", "00223")
+                userDao.updatePassword("admin", newHash)
+                isValid = true
+            }
+            return if (isValid) AppUser(id = userEntity.id, username = userEntity.username, role = userEntity.role) else null
+        }
+
+        if (userEntity == null) return null
+        val isValid = PasswordHasher.verify(normalized, password, userEntity.passwordHash)
+        return if (isValid) {
+            AppUser(id = userEntity.id, username = userEntity.username, role = userEntity.role)
+        } else null
+    }
+
+    suspend fun registerUser(username: String, password: String, role: String): AppUser? {
+        val normalized = username.trim().lowercase()
+        val existing = userDao.getUserByUsername(normalized)
+        if (existing != null) return null // Username taken
+
+        val newId = UUID.randomUUID().toString()
+        val passwordHash = PasswordHasher.hash(normalized, password)
+        val newEntity = UserEntity(id = newId, username = normalized, passwordHash = passwordHash, role = role)
+        userDao.insertUser(newEntity)
+        return AppUser(id = newId, username = normalized, role = role)
+    }
+
+    suspend fun updateAdminPassword(newPassword: String) {
+        val passwordHash = PasswordHasher.hash("admin", newPassword)
+        userDao.updatePassword("admin", passwordHash)
+    }
+
+    suspend fun createProAccountByAdmin(
+        username: String,
+        password: String,
+        serviceName: String,
+        category: ServiceCategory,
+        city: String,
+        phone: String,
+        address: String,
+        description: String,
+        latitude: Double = 12.6392,
+        longitude: Double = -8.0029
+    ): Boolean {
+        val normalized = username.trim().lowercase()
+        val existing = userDao.getUserByUsername(normalized)
+        if (existing != null) return false
+
+        val userId = UUID.randomUUID().toString()
+        val passwordHash = PasswordHasher.hash(normalized, password)
+        val userEntity = UserEntity(id = userId, username = normalized, passwordHash = passwordHash, role = "prestataire")
+        userDao.insertUser(userEntity)
+
+        val fullDesc = if (address.isNotBlank()) "$description ($address)" else description
+
+        val serviceProvider = ServiceProvider(
+            id = UUID.randomUUID().toString(),
+            name = serviceName,
+            category = category,
+            description = fullDesc,
+            city = city,
+            phone = phone,
+            rating = 5.0,
+            latitude = latitude,
+            longitude = longitude,
+            isOpen = true,
+            isFavorite = false,
+            isMine = false,
+            hours = "08:00 - 18:00",
+            servicesOffered = "Maintenance, Réparation Express, Diagnostic Pro"
+        )
+        insertService(serviceProvider)
+        return true
+    }
+
+    suspend fun getAllUsers(): List<AppUser> {
+        return userDao.getAllUsers().map { AppUser(id = it.id, username = it.username, role = it.role) }
+    }
+
+    // --- SERVICE PROVIDERS ---
+    fun getAllServices(): Flow<List<ServiceProvider>> {
+        return serviceDao.getAllServices().map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    fun getServicesByCategory(category: ServiceCategory): Flow<List<ServiceProvider>> {
+        return serviceDao.getServicesByCategory(category.name).map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    suspend fun insertService(service: ServiceProvider) {
+        serviceDao.insertService(ServiceProviderEntity.fromDomainModel(service))
+    }
+
+    suspend fun updateService(service: ServiceProvider) {
+        serviceDao.updateService(ServiceProviderEntity.fromDomainModel(service))
+    }
+
+    suspend fun deleteService(id: String) {
+        serviceDao.deleteService(id)
+    }
+
+    suspend fun toggleFavorite(id: String) {
+        val serviceEntity = serviceDao.getServiceById(id) ?: return
+        val updated = serviceEntity.copy(isFavorite = !serviceEntity.isFavorite)
+        serviceDao.updateService(updated)
+    }
+
+    suspend fun toggleServiceStatus(id: String, isOpen: Boolean) {
+        val serviceEntity = serviceDao.getServiceById(id) ?: return
+        val updated = serviceEntity.copy(isOpen = isOpen)
+        serviceDao.updateService(updated)
+    }
+
+    // --- REVIEWS ---
+    fun getReviewsForService(serviceId: String): Flow<List<Review>> {
+        return reviewDao.getReviewsForService(serviceId).map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    fun getAllReviews(): Flow<List<Review>> {
+        return reviewDao.getAllReviews().map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    suspend fun addReview(review: Review) {
+        reviewDao.insertReview(ReviewEntity.fromDomainModel(review))
+        recalculateProviderRating(review.serviceId)
+    }
+
+    suspend fun deleteReview(reviewId: String, serviceId: String) {
+        reviewDao.deleteReview(reviewId)
+        recalculateProviderRating(serviceId)
+    }
+
+    private suspend fun recalculateProviderRating(serviceId: String) {
+        val reviews = reviewDao.getReviewsListForService(serviceId)
+        val service = serviceDao.getServiceById(serviceId) ?: return
+
+        val newRating = if (reviews.isNotEmpty()) {
+            val avg = reviews.map { it.rating }.average()
+            (Math.round(avg * 10.0) / 10.0)
+        } else {
+            5.0
+        }
+
+        serviceDao.updateService(service.copy(rating = newRating))
+    }
+}

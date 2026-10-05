@@ -1,0 +1,6 @@
+{
+  "name": "Auto Connect Mali",
+  "description": "Votre assistant auto nouvelle génération au Mali. Trouvez mécaniciens, pièces détachées et service SOS dépannage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
