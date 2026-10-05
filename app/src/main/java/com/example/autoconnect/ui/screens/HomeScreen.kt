@@ -47,9 +47,14 @@ import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AssistChip
@@ -58,6 +63,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -99,6 +105,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,6 +115,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
+import com.example.autoconnect.data.sync.SyncStatus
 import com.example.autoconnect.ui.theme.BluePrimary
 import com.example.autoconnect.ui.theme.EmergencyRed
 import com.example.autoconnect.ui.viewmodel.AuthViewModel
@@ -136,9 +145,19 @@ fun HomeScreen(
     onNavigateToDiscovery: () -> Unit = {},
     onLogout: () -> Unit
 ) {
+    val context = LocalContext.current
     val currentUser by authViewModel.currentUser.collectAsState()
     val allServices by servicesViewModel.allServices.collectAsState()
     val services by servicesViewModel.filteredServices.collectAsState()
+    val syncStatus by servicesViewModel.syncStatus.collectAsState()
+    val isOnline by servicesViewModel.isOnline.collectAsState()
+
+    val mechanicsCount = remember(allServices) {
+        allServices.count { it.category == ServiceCategory.MECANICIEN }
+    }
+    val partsShopsCount = remember(allServices) {
+        allServices.count { it.category == ServiceCategory.PIECES }
+    }
 
     val searchQuery by servicesViewModel.searchQuery.collectAsState()
     val selectedCity by servicesViewModel.selectedCity.collectAsState()
@@ -327,6 +346,29 @@ fun HomeScreen(
                         }
                     },
                     actions = {
+                        IconButton(
+                            onClick = {
+                                Toast.makeText(context, "Synchronisation Cloud Firestore en cours...", Toast.LENGTH_SHORT).show()
+                                servicesViewModel.syncDataNow { _, msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.testTag("home_sync_top_button")
+                        ) {
+                            if (syncStatus is SyncStatus.Syncing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = if (isOnline) Icons.Default.CloudSync else Icons.Default.CloudOff,
+                                    contentDescription = "Synchroniser Cloud Firestore",
+                                    tint = if (isOnline) Color.White else Color.White.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
                         IconButton(onClick = onNavigateToEmergency) {
                             Icon(Icons.Default.Bolt, contentDescription = "Urgence", tint = Color(0xFFFFD700))
                         }
@@ -502,6 +544,121 @@ fun HomeScreen(
                                                 color = Color(0xFF1E3A8A),
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                             )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Data Synchronization Service Card (Firestore ↔ Room SQLite)
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("home_sync_status_card"),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = if (isOnline) Color(0xFFEFF6FF) else Color(0xFFFEF3C7),
+                                                    modifier = Modifier.size(38.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                                            contentDescription = null,
+                                                            tint = if (isOnline) BluePrimary else Color(0xFFD97706),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.width(10.dp))
+                                                Column {
+                                                    Text(
+                                                        text = "Synchro Cloud ↔ Base Room",
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 13.sp,
+                                                        color = Color(0xFF0F172A)
+                                                    )
+                                                    Text(
+                                                        text = if (isOnline) "Cloud Firestore connecté" else "Mode hors-ligne (Room actif)",
+                                                        fontSize = 11.sp,
+                                                        color = if (isOnline) Color(0xFF059669) else Color(0xFFD97706),
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                            }
+
+                                            Button(
+                                                onClick = {
+                                                    servicesViewModel.syncDataNow { _, msg ->
+                                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                    }
+                                                },
+                                                enabled = syncStatus !is SyncStatus.Syncing,
+                                                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                                shape = RoundedCornerShape(20.dp),
+                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                                modifier = Modifier.testTag("home_sync_button")
+                                            ) {
+                                                if (syncStatus is SyncStatus.Syncing) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(14.dp),
+                                                        color = Color.White,
+                                                        strokeWidth = 2.dp
+                                                    )
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Text("Synchro...", fontSize = 11.sp)
+                                                } else {
+                                                    Icon(
+                                                        Icons.Default.Sync,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(14.dp),
+                                                        tint = Color.White
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text("Actualiser", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFFF8FAFC),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "💾 ${allServices.size} en cache ($mechanicsCount mécaniciens, $partsShopsCount boutiques)",
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF334155),
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                Text(
+                                                    text = servicesViewModel.getLastSyncFormatted(),
+                                                    fontSize = 10.sp,
+                                                    color = Color(0xFF64748B)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -793,8 +950,8 @@ fun HomeScreen(
                                     Icon(Icons.Default.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
-                                        Text("Ouvrir la Carte Interactive", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 18.sp)
-                                        Text("Localisez les garages autour de vous à Bamako", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text("Carte Google Maps Interactive", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 18.sp)
+                                        Text("Localisez mécaniciens et boutiques de pièces à Bamako", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))

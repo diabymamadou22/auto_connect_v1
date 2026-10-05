@@ -6,5 +6,5 @@ import com.example.autoconnect.data.repository.AutoConnectRepository
 
 class AutoConnectApplication : Application() {
     val database by lazy { AppDatabase.getInstance(this) }
-    val repository by lazy { AutoConnectRepository(database) }
+    val repository by lazy { AutoConnectRepository(database, this) }
 }

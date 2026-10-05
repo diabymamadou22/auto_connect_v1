@@ -55,6 +55,11 @@ class AuthViewModel(private val repository: AutoConnectRepository) : ViewModel()
         }
     }
 
+    fun loginWithGoogle(user: AppUser) {
+        _currentUser.value = user
+        _errorMessage.value = null
+    }
+
     // Strict authentication required for all accounts (Admin, Pro, Client)
 
     fun updateAdminPassword(newPassword: String, onResult: (Boolean) -> Unit) {

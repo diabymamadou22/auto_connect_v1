@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "ServiceProvider": {
+      "title": "ServiceProvider",
+      "description": "A registered mechanic workshop or auto parts shop in Mali.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "name": { "type": "string", "description": "Business name" },
+        "category": { "type": "string", "description": "Category: MECANICIEN, PIECES, PNEUMATIQUE, AUTRE" },
+        "description": { "type": "string", "description": "Service description" },
+        "city": { "type": "string", "description": "City or neighborhood" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "rating": { "type": "number", "description": "Average rating" },
+        "latitude": { "type": "number", "description": "GPS Latitude" },
+        "longitude": { "type": "number", "description": "GPS Longitude" },
+        "isOpen": { "type": "boolean", "description": "Whether currently open" },
+        "hours": { "type": "string", "description": "Operating hours" },
+        "servicesOffered": { "type": "string", "description": "Services or parts offered" },
+        "ownerId": { "type": "string", "description": "UID of creator or provider" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" }
+      },
+      "required": ["id", "name", "category", "city", "phone"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile in AutoConnect.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Auth UID" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "email": { "type": "string", "description": "User email address" },
+        "role": { "type": "string", "description": "User role (client, prestataire, admin)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["userId", "displayName"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User review for a service provider.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Review unique ID" },
+        "serviceId": { "type": "string", "description": "Associated service provider ID" },
+        "userId": { "type": "string", "description": "Reviewer auth UID" },
+        "userName": { "type": "string", "description": "Reviewer name" },
+        "comment": { "type": "string", "description": "Review text comment" },
+        "rating": { "type": "number", "description": "Rating score between 1 and 5" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["id", "serviceId", "userId", "comment", "rating"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Appointment booking between user and service provider.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Booking ID" },
+        "userId": { "type": "string", "description": "Client UID" },
+        "providerId": { "type": "string", "description": "Provider ID" },
+        "providerName": { "type": "string", "description": "Provider name" },
+        "serviceType": { "type": "string", "description": "Type of service requested" },
+        "clientName": { "type": "string", "description": "Client name" },
+        "clientPhone": { "type": "string", "description": "Client phone number" },
+        "date": { "type": "string", "description": "Appointment date" },
+        "timeSlot": { "type": "string", "description": "Time slot" },
+        "status": { "type": "string", "description": "Status (CONFIRME, EN_ATTENTE, ANNULE)" },
+        "notes": { "type": "string", "description": "Additional notes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Booking timestamp" }
+      },
+      "required": ["id", "userId", "providerId", "serviceType", "clientName", "date", "status"]
+    }
+  },
+  "firestore": {
+    "/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/ServiceProvider" },
+      "description": "Directory of local mechanics, garages, and auto parts stores."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Registered user profile documents."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Client ratings and reviews for garages."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Service appointments booked with garages."
+    }
+  }
+}

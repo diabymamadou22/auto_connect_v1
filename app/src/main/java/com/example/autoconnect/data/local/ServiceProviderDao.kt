@@ -24,6 +24,21 @@ interface ServiceProviderDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(services: List<ServiceProviderEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(services: List<ServiceProviderEntity>)
+
+    @Query("SELECT COUNT(*) FROM services")
+    suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM services WHERE category = :category")
+    suspend fun getCountByCategory(category: String): Int
+
+    @Query("SELECT * FROM services WHERE category = 'MECANICIEN' ORDER BY rating DESC")
+    fun getMechanics(): Flow<List<ServiceProviderEntity>>
+
+    @Query("SELECT * FROM services WHERE category = 'PIECES' ORDER BY rating DESC")
+    fun getPartsShops(): Flow<List<ServiceProviderEntity>>
+
     @Update
     suspend fun updateService(service: ServiceProviderEntity)
 

@@ -56,7 +56,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.credentials.CredentialManager
+import com.example.autoconnect.R
+import com.example.autoconnect.util.GoogleAuthHelper
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,6 +93,8 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = remember { CredentialManager.create(context) }
     val isLoading by authViewModel.isLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
 
@@ -410,6 +418,78 @@ fun LoginScreen(
                                     letterSpacing = 1.sp
                                 )
                             }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Divider with "OU"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFFE2E8F0)
+                        )
+                        Text(
+                            text = "  OU  ",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        androidx.compose.material3.HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFFE2E8F0)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Google Sign-In
+                    OutlinedButton(
+                        onClick = {
+                            GoogleAuthHelper.signInWithGoogle(
+                                context = context,
+                                credentialManager = credentialManager,
+                                onAuthSuccess = { appUser ->
+                                    authViewModel.loginWithGoogle(appUser)
+                                    Toast.makeText(context, "Bienvenue ${appUser.username} !", Toast.LENGTH_SHORT).show()
+                                    onLoginSuccess()
+                                },
+                                onAuthError = { err ->
+                                    Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                                },
+                                scope = coroutineScope
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .testTag("google_sign_in_button"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDADCE0))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_google_logo),
+                                contentDescription = "Logo Google",
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Continuer avec Google",
+                                color = Color(0xFF3C4043),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
+                            )
                         }
                     }
                 }

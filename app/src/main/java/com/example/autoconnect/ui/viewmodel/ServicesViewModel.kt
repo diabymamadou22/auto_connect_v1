@@ -7,6 +7,8 @@ import com.example.autoconnect.data.model.Review
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
 import com.example.autoconnect.data.repository.AutoConnectRepository
+import com.example.autoconnect.data.sync.SyncStatus
+import com.example.autoconnect.data.sync.SyncSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,8 +24,23 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
             repository.seedProvidersIfEmpty()
             repository.seedTutorialsIfEmpty()
             repository.seedReviewsIfEmpty()
+            repository.startCloudSync(this)
         }
     }
+
+    val syncStatus: StateFlow<SyncStatus> = repository.syncStatus
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = SyncStatus.Idle()
+        )
+
+    val isOnline: StateFlow<Boolean> = repository.isOnline
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
 
     val allServices: StateFlow<List<ServiceProvider>> = repository.getAllServices()
         .stateIn(
@@ -31,6 +48,38 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val mechanics: StateFlow<List<ServiceProvider>> = repository.getMechanics()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val partsShops: StateFlow<List<ServiceProvider>> = repository.getPartsShops()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun syncDataNow(onComplete: ((Boolean, String) -> Unit)? = null) {
+        viewModelScope.launch {
+            val result = repository.triggerDataSync(forceRefresh = true)
+            if (result != null && result.isSuccess) {
+                val summary = result.getOrNull()
+                val msg = summary?.message ?: "Données synchronisées avec succès."
+                onComplete?.invoke(true, msg)
+            } else {
+                val errorMsg = result?.exceptionOrNull()?.localizedMessage ?: "Synchronisation hors-ligne."
+                onComplete?.invoke(false, errorMsg)
+            }
+        }
+    }
+
+    fun getLastSyncFormatted(): String {
+        return repository.getLastSyncFormatted()
+    }
 
     val allTutorials: StateFlow<List<com.example.autoconnect.data.local.TutorialEntity>> = repository.getAllTutorials()
         .stateIn(

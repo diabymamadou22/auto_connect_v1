@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE SECURITY PRIMITIVES ---
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // --- VALIDATION HELPERS ---
+    function isValidServiceProvider(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 50 &&
+             data.city is string && data.city.size() > 0 && data.city.size() <= 100 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 30 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             (!('rating' in data) || (data.rating is number && data.rating >= 0.0 && data.rating <= 5.0)) &&
+             (!('latitude' in data) || data.latitude is number) &&
+             (!('longitude' in data) || data.longitude is number) &&
+             (!('isOpen' in data) || data.isOpen is bool) &&
+             (!('hours' in data) || (data.hours is string && data.hours.size() <= 100)) &&
+             (!('servicesOffered' in data) || (data.servicesOffered is string && data.servicesOffered.size() <= 500)) &&
+             (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128));
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 30));
+    }
+
+    function isValidReview(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+             data.serviceId is string && data.serviceId.size() > 0 && data.serviceId.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.comment is string && data.comment.size() > 0 && data.comment.size() <= 1000 &&
+             data.rating is number && data.rating >= 1.0 && data.rating <= 5.0 &&
+             (!('userName' in data) || (data.userName is string && data.userName.size() <= 100));
+    }
+
+    function isValidBooking(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.providerId is string && data.providerId.size() > 0 && data.providerId.size() <= 128 &&
+             data.serviceType is string && data.serviceType.size() > 0 && data.serviceType.size() <= 100 &&
+             data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+             data.status is string && data.status.size() > 0 && data.status.size() <= 30 &&
+             (!('clientPhone' in data) || (data.clientPhone is string && data.clientPhone.size() <= 30)) &&
+             (!('timeSlot' in data) || (data.timeSlot is string && data.timeSlot.size() <= 50)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // --- COLLECTION RULES ---
+
+    // 1. Service Providers (Mechanics, Parts Shops) - Public directory read
+    match /services/{serviceId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(serviceId) && isValidServiceProvider(incoming());
+      allow update: if isSignedIn() && isValidId(serviceId) && isValidServiceProvider(incoming()) &&
+                       (!('ownerId' in existing()) || resource.data.ownerId == request.auth.uid);
+      allow delete: if isSignedIn() && isValidId(serviceId) && resource.data.ownerId == request.auth.uid;
+    }
+
+    // 2. User Profiles - Private to authenticated owner
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isValidUserProfile(incoming()) && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 3. Reviews - Public read, authenticated user create/delete
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming()) && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(reviewId) && resource.data.userId == request.auth.uid;
+    }
+
+    // 4. Bookings - User isolation
+    match /bookings/{bookingId} {
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(bookingId) && isValidBooking(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(bookingId) && isValidBooking(incoming()) && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(bookingId) && resource.data.userId == request.auth.uid;
+    }
+  }
+}

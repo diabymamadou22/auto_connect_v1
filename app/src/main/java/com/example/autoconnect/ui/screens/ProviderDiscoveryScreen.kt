@@ -47,10 +47,13 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.TireRepair
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -59,6 +62,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -107,6 +111,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
+import com.example.autoconnect.data.sync.SyncStatus
 import com.example.autoconnect.ui.theme.BluePrimary
 import com.example.autoconnect.ui.viewmodel.ServicesViewModel
 import java.util.Locale
@@ -131,6 +136,8 @@ fun ProviderDiscoveryScreen(
 ) {
     val context = LocalContext.current
     val allServices by servicesViewModel.allServices.collectAsState()
+    val syncStatus by servicesViewModel.syncStatus.collectAsState()
+    val isOnline by servicesViewModel.isOnline.collectAsState()
 
     var selectedTab by remember { mutableStateOf(DiscoveryFilterTab.ALL) }
     var searchQuery by remember { mutableStateOf("") }
@@ -331,64 +338,107 @@ fun ProviderDiscoveryScreen(
                 }
             }
 
-            // Room Database Stats Pill Banner
+            // Room Database & Cloud Sync Stats Banner
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .testTag("discovery_sync_card"),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = CircleShape,
-                                color = Color(0xFFEFF6FF),
-                                modifier = Modifier.size(36.dp)
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Storage,
-                                        contentDescription = null,
-                                        tint = BluePrimary,
-                                        modifier = Modifier.size(20.dp)
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isOnline) Color(0xFFEFF6FF) else Color(0xFFFEF3C7),
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                            contentDescription = null,
+                                            tint = if (isOnline) BluePrimary else Color(0xFFD97706),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Base Room ↔ Cloud Firestore",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                    Text(
+                                        text = "${allServices.size} prestataires ($mechanicsCount mécaniciens, $partsShopsCount pièces)",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "Base Room SQLite locale",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
-                                )
-                                Text(
-                                    text = "${allServices.size} prestataires enregistrés hors-ligne",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF64748B)
-                                )
+
+                            Button(
+                                onClick = {
+                                    servicesViewModel.syncDataNow { _, msg ->
+                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                enabled = syncStatus !is SyncStatus.Syncing,
+                                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                shape = RoundedCornerShape(20.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                modifier = Modifier.testTag("discovery_sync_button")
+                            ) {
+                                if (syncStatus is SyncStatus.Syncing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(14.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Synchro...", fontSize = 11.sp)
+                                } else {
+                                    Icon(
+                                        Icons.Default.Sync,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Actualiser", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
 
-                        Surface(
-                            color = Color(0xFFECFDF5),
-                            shape = RoundedCornerShape(20.dp)
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "En direct",
+                                text = if (isOnline) "🟢 Mode en ligne (Cloud actif)" else "🟠 Mode hors-ligne (accès local Room garanti)",
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF047857),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                color = if (isOnline) Color(0xFF059669) else Color(0xFFD97706),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Synchro : ${servicesViewModel.getLastSyncFormatted()}",
+                                fontSize = 10.sp,
+                                color = Color(0xFF94A3B8)
                             )
                         }
                     }

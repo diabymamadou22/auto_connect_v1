@@ -1,6 +1,9 @@
 package com.example.autoconnect.data.repository
 
+import android.content.Context
+import com.example.autoconnect.data.firebase.FirebaseManager
 import com.example.autoconnect.data.local.AppDatabase
+import com.example.autoconnect.data.local.BookingEntity
 import com.example.autoconnect.data.local.ReviewEntity
 import com.example.autoconnect.data.local.ServiceProviderEntity
 import com.example.autoconnect.data.local.UserEntity
@@ -8,12 +11,21 @@ import com.example.autoconnect.data.model.AppUser
 import com.example.autoconnect.data.model.Review
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
+import com.example.autoconnect.data.sync.DataSyncManager
+import com.example.autoconnect.data.sync.SyncStatus
+import com.example.autoconnect.data.sync.SyncSummary
 import com.example.autoconnect.util.PasswordHasher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.util.UUID
 
-class AutoConnectRepository(private val database: AppDatabase) {
+class AutoConnectRepository(
+    private val database: AppDatabase,
+    private val context: Context? = null
+) {
 
     private val userDao = database.userDao()
     private val serviceDao = database.serviceProviderDao()
@@ -21,6 +33,19 @@ class AutoConnectRepository(private val database: AppDatabase) {
     private val tutorialDao = database.tutorialDao()
     private val bookingDao = database.bookingDao()
     private val chatDao = database.chatMessageDao()
+
+    val syncManager: DataSyncManager? = context?.let { DataSyncManager.getInstance(it) }
+
+    val syncStatus: Flow<SyncStatus> = syncManager?.syncStatus ?: flowOf(SyncStatus.Idle())
+    val isOnline: Flow<Boolean> = syncManager?.isOnline ?: flowOf(true)
+
+    suspend fun triggerDataSync(forceRefresh: Boolean = false): Result<SyncSummary>? {
+        return syncManager?.syncFromFirestore(forceRefresh)
+    }
+
+    fun getLastSyncFormatted(): String {
+        return syncManager?.getLastSyncFormatted() ?: "Jamais"
+    }
 
     // --- CHAT & MESSAGING ---
     fun getAllChatMessages(): Flow<List<com.example.autoconnect.data.local.ChatMessageEntity>> {
@@ -46,6 +71,9 @@ class AutoConnectRepository(private val database: AppDatabase) {
 
     suspend fun insertBooking(booking: com.example.autoconnect.data.local.BookingEntity) {
         bookingDao.insertBooking(booking)
+        context?.let { ctx ->
+            FirebaseManager.pushBookingToFirestore(ctx, booking)
+        }
     }
 
     suspend fun updateBookingStatus(id: String, status: String) {
@@ -177,9 +205,36 @@ class AutoConnectRepository(private val database: AppDatabase) {
         return userDao.getAllUsers().map { AppUser(id = it.id, username = it.username, role = it.role) }
     }
 
+    fun startCloudSync(scope: CoroutineScope) {
+        syncManager?.let { manager ->
+            manager.startRealtimeSync(scope)
+            scope.launch {
+                manager.syncFromFirestore()
+            }
+        } ?: run {
+            context?.let { ctx ->
+                FirebaseManager.syncFromFirestore(ctx, scope) { service ->
+                    serviceDao.insertService(ServiceProviderEntity.fromDomainModel(service))
+                }
+            }
+        }
+    }
+
     // --- SERVICE PROVIDERS ---
     fun getAllServices(): Flow<List<ServiceProvider>> {
         return serviceDao.getAllServices().map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    fun getMechanics(): Flow<List<ServiceProvider>> {
+        return serviceDao.getMechanics().map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    fun getPartsShops(): Flow<List<ServiceProvider>> {
+        return serviceDao.getPartsShops().map { list ->
             list.map { it.toDomainModel() }
         }
     }
@@ -192,10 +247,16 @@ class AutoConnectRepository(private val database: AppDatabase) {
 
     suspend fun insertService(service: ServiceProvider) {
         serviceDao.insertService(ServiceProviderEntity.fromDomainModel(service))
+        context?.let { ctx ->
+            FirebaseManager.pushServiceToFirestore(ctx, service)
+        }
     }
 
     suspend fun updateService(service: ServiceProvider) {
         serviceDao.updateService(ServiceProviderEntity.fromDomainModel(service))
+        context?.let { ctx ->
+            FirebaseManager.pushServiceToFirestore(ctx, service)
+        }
     }
 
     suspend fun deleteService(id: String) {
@@ -212,6 +273,9 @@ class AutoConnectRepository(private val database: AppDatabase) {
         val serviceEntity = serviceDao.getServiceById(id) ?: return
         val updated = serviceEntity.copy(isOpen = isOpen)
         serviceDao.updateService(updated)
+        context?.let { ctx ->
+            FirebaseManager.pushServiceToFirestore(ctx, updated.toDomainModel())
+        }
     }
 
     // --- REVIEWS ---
@@ -230,6 +294,9 @@ class AutoConnectRepository(private val database: AppDatabase) {
     suspend fun addReview(review: Review) {
         reviewDao.insertReview(ReviewEntity.fromDomainModel(review))
         recalculateProviderRating(review.serviceId)
+        context?.let { ctx ->
+            FirebaseManager.pushReviewToFirestore(ctx, review)
+        }
     }
 
     suspend fun deleteReview(reviewId: String, serviceId: String) {
