@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.OfflinePin
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -69,6 +70,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -143,6 +145,7 @@ fun HomeScreen(
     onNavigateToVehicleHealthReport: () -> Unit,
     onNavigateToChatList: () -> Unit,
     onNavigateToDiscovery: () -> Unit = {},
+    onNavigateToMechanicSearch: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -246,6 +249,17 @@ fun HomeScreen(
                     onClick = {
                         scope.launch { drawerState.close() }
                         onNavigateToDiscovery()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary) },
+                    label = { Text("Recherche Mécaniciens (Firestore)", fontWeight = FontWeight.Bold) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToMechanicSearch()
                     },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
@@ -419,14 +433,22 @@ fun HomeScreen(
                 }
             },
             floatingActionButton = {
-                if (currentUser?.role == "prestataire" || currentUser?.role == "admin") {
-                    FloatingActionButton(
+                if (currentUser?.role == "prestataire") {
+                    ExtendedFloatingActionButton(
                         onClick = onNavigateToAddService,
+                        icon = { Icon(Icons.Default.Build, contentDescription = null) },
+                        text = { Text("Créer une Prestation", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
                         containerColor = BluePrimary,
                         contentColor = Color.White
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Ajouter un service")
-                    }
+                    )
+                } else if (currentUser?.role == "admin") {
+                    ExtendedFloatingActionButton(
+                        onClick = onNavigateToAdminDashboard,
+                        icon = { Icon(Icons.Default.PersonAdd, contentDescription = null) },
+                        text = { Text("Créer un Prestataire", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                        containerColor = Color(0xFF6A1B9A),
+                        contentColor = Color.White
+                    )
                 }
             }
         ) { innerPadding ->
@@ -542,6 +564,81 @@ fun HomeScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp,
                                                 color = Color(0xFF1E3A8A),
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Direct Cloud Firestore Mechanic Search Card
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToMechanicSearch() }
+                                        .testTag("home_hero_mechanic_firestore_card"),
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0369A1)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color.White.copy(alpha = 0.2f),
+                                            modifier = Modifier.size(50.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    Icons.Default.Build,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(14.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    "Mécaniciens Mali (Cloud)",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    fontSize = 15.sp
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Surface(
+                                                    color = Color(0xFF38BDF8),
+                                                    shape = RoundedCornerShape(6.dp)
+                                                ) {
+                                                    Text(
+                                                        "FIRESTORE",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Black,
+                                                        color = Color(0xFF0C4A6E),
+                                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                "Recherche en direct avec backend Cloud Firestore",
+                                                color = Color.White.copy(alpha = 0.9f),
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = Color.White
+                                        ) {
+                                            Text(
+                                                text = "RECHERCHER",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 10.sp,
+                                                color = Color(0xFF0369A1),
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                             )
                                         }

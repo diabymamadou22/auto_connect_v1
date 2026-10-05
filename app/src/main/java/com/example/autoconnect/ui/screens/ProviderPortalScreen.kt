@@ -1,11 +1,8 @@
 package com.example.autoconnect.ui.screens
 
-import android.Manifest
-import android.content.Context
-import android.location.LocationManager
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,7 +29,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
@@ -42,13 +42,11 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -69,8 +67,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -78,6 +74,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -91,11 +88,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.data.local.BookingEntity
-import com.example.autoconnect.data.model.ServiceCategory
+import com.example.autoconnect.data.model.OfferedService
 import com.example.autoconnect.data.model.ServiceProvider
 import com.example.autoconnect.ui.theme.BluePrimary
 import com.example.autoconnect.ui.viewmodel.AuthViewModel
 import com.example.autoconnect.ui.viewmodel.ServicesViewModel
+import java.text.NumberFormat
+import java.util.Locale
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,42 +110,75 @@ fun ProviderPortalScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     val allServices by servicesViewModel.allServices.collectAsState()
     val allBookings by servicesViewModel.allBookings.collectAsState()
+    val allOfferedServices by servicesViewModel.allOfferedServices.collectAsState()
 
     val isProUser = currentUser != null && (currentUser?.role == "prestataire" || currentUser?.role == "admin")
 
-    // Show services marked as mine or matching provider username
-    val myServices = remember(allServices, currentUser) {
+    // Find the current provider establishment
+    val currentWorkshop = remember(allServices, currentUser) {
         if (currentUser?.role == "admin") {
-            allServices
+            allServices.firstOrNull()
         } else {
-            allServices.filter { it.isMine || it.name.contains(currentUser?.username ?: "", ignoreCase = true) }
+            allServices.firstOrNull { it.id == currentUser?.id }
+                ?: allServices.firstOrNull { it.isMine }
+                ?: allServices.firstOrNull { it.name.contains(currentUser?.username ?: "", ignoreCase = true) }
         }
     }
 
-    val myBookings = remember(allBookings, myServices) {
-        val myServiceIds = myServices.map { it.id }.toSet()
-        val myServiceNames = myServices.map { it.name.lowercase() }.toSet()
+    val workshopId = currentWorkshop?.id ?: "g1"
+    val workshopName = currentWorkshop?.name ?: (currentUser?.username?.replaceFirstChar { it.uppercase() } + " Atelier Auto")
+
+    // Offered services belonging to this provider
+    val myOfferedServices = remember(allOfferedServices, workshopId, currentUser) {
+        if (currentUser?.role == "admin") {
+            allOfferedServices
+        } else {
+            val list = allOfferedServices.filter { it.providerId == workshopId }
+            if (list.isEmpty() && (currentUser?.username == "prestataire" || currentWorkshop?.isMine == true)) {
+                allOfferedServices.filter { it.providerId == "g1" || it.providerId == workshopId }
+            } else {
+                list
+            }
+        }
+    }
+
+    // Customer bookings for this workshop
+    val myBookings = remember(allBookings, workshopId, currentWorkshop) {
         allBookings.filter { booking ->
-            myServiceIds.contains(booking.providerId) || myServiceNames.any { booking.providerName.lowercase().contains(it) }
+            booking.providerId == workshopId ||
+                    booking.providerId == "g1" ||
+                    booking.providerName.equals(workshopName, ignoreCase = true)
         }
     }
 
-    var selectedTab by remember { mutableStateOf(0) } // 0: Services, 1: RDV Clients
-    var showFormSheet by remember { mutableStateOf(false) }
-    var editingService by remember { mutableStateOf<ServiceProvider?>(null) }
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Mes Services, 1: RDV Clients, 2: Mon Établissement
+    var showCreateServiceSheet by remember { mutableStateOf(false) }
+    var serviceToEdit by remember { mutableStateOf<OfferedService?>(null) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Espace Professionnel AutoConnect", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                title = {
+                    Column {
+                        Text("Portail Prestataire", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        Text("Création & Gestion de mes Services", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Retour", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1E293B))
+                actions = {
+                    if (isProUser && currentWorkshop != null) {
+                        IconButton(onClick = { onNavigateToDetail(currentWorkshop) }) {
+                            Icon(Icons.Default.Storefront, contentDescription = "Voir ma fiche client", tint = Color.White)
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
             )
         }
     ) { innerPadding ->
@@ -157,24 +189,20 @@ fun ProviderPortalScreen(
                 .background(Color(0xFFF8FAFC))
         ) {
             if (!isProUser) {
-                // Non-Authenticated Pro Warning Screen
-                ProAccessRestrictedCard(
-                    onLoginClick = onBack
-                )
+                ProAccessRestrictedCard(onLoginClick = onBack)
             } else {
-                // Authenticated Pro Content
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
                 ) {
-                    // Admin Authentication Badge Header
+                    // Prestataire Workshop Summary Card
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A))
                         ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
+                            Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,60 +212,57 @@ fun ProviderPortalScreen(
                                         Surface(
                                             shape = CircleShape,
                                             color = Color(0xFF10B981).copy(alpha = 0.2f),
-                                            modifier = Modifier.size(48.dp)
+                                            modifier = Modifier.size(46.dp)
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
                                                 Icon(
                                                     imageVector = Icons.Default.Verified,
                                                     contentDescription = null,
                                                     tint = Color(0xFF10B981),
-                                                    modifier = Modifier.size(28.dp)
+                                                    modifier = Modifier.size(26.dp)
                                                 )
                                             }
                                         }
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    text = currentUser?.username?.replaceFirstChar { it.uppercase() } ?: "Pro",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 18.sp
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Surface(
-                                                    color = Color(0xFF10B981),
-                                                    shape = RoundedCornerShape(12.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "AUTHENTIFIÉ ADMIN",
-                                                        color = Color.White,
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.ExtraBold,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
                                             Text(
-                                                text = "Compte Professionnel Validé & Sécurisé",
-                                                color = Color.White.copy(alpha = 0.7f),
-                                                fontSize = 12.sp
+                                                text = workshopName,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 17.sp
+                                            )
+                                            Text(
+                                                text = "Compte Prestataire certifié par l'Admin",
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 11.sp
                                             )
                                         }
                                     }
+
+                                    Surface(
+                                        color = if (currentWorkshop?.isOpen != false) Color(0xFF059669) else Color(0xFFDC2626),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text(
+                                            text = if (currentWorkshop?.isOpen != false) "OUVERT" else "FERMÉ",
+                                            color = Color.White,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
                                 }
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
 
-                                // Quick Metrics Row
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     PortalStatCard(
                                         modifier = Modifier.weight(1f),
-                                        label = "Établissements",
-                                        value = myServices.size.toString()
+                                        label = "Services Créés",
+                                        value = myOfferedServices.size.toString()
                                     )
                                     PortalStatCard(
                                         modifier = Modifier.weight(1f),
@@ -246,16 +271,40 @@ fun ProviderPortalScreen(
                                     )
                                     PortalStatCard(
                                         modifier = Modifier.weight(1f),
-                                        label = "Statut",
-                                        value = "Actif"
+                                        label = "Ville",
+                                        value = currentWorkshop?.city ?: "Bamako"
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Navigation Tabs (Services vs RDV Clients)
+                        // Role explanation banner
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color(0xFFEFF6FF),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(22.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Espace Réservé Prestataire : Vous créez et gérez vos propres prestations, tarifs en FCFA et disponibilités.",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF1E3A8A),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Navigation Tabs
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color.White
@@ -270,30 +319,44 @@ fun ProviderPortalScreen(
                                     onClick = { selectedTab = 0 },
                                     text = {
                                         Text(
-                                            "Mes Services (${myServices.size})",
-                                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                                            "Mes Services (${myOfferedServices.size})",
+                                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 12.sp
                                         )
                                     },
-                                    icon = { Icon(Icons.Default.Business, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                                    icon = { Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                 )
                                 Tab(
                                     selected = selectedTab == 1,
                                     onClick = { selectedTab = 1 },
                                     text = {
                                         Text(
-                                            "RDV Clients (${myBookings.size})",
-                                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
+                                            "RDV Reçus (${myBookings.size})",
+                                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 12.sp
                                         )
                                     },
-                                    icon = { Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                                    icon = { Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                )
+                                Tab(
+                                    selected = selectedTab == 2,
+                                    onClick = { selectedTab = 2 },
+                                    text = {
+                                        Text(
+                                            "Mon Garage",
+                                            fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 12.sp
+                                        )
+                                    },
+                                    icon = { Icon(Icons.Default.Business, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                     }
 
-                    // TAB 0: Mes Établissements / Services
+                    // TAB 0: MES SERVICES & PRESTATIONS (Créés par le Prestataire)
                     if (selectedTab == 0) {
                         item {
                             Row(
@@ -301,171 +364,107 @@ fun ProviderPortalScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Services & Établissements", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1E293B))
+                                Column {
+                                    Text("Catalogue de mes Services", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                    Text("Vos clients verront ces services et leurs prix en FCFA", fontSize = 11.sp, color = Color(0xFF64748B))
+                                }
                                 Button(
                                     onClick = {
-                                        editingService = null
-                                        showFormSheet = true
+                                        serviceToEdit = null
+                                        showCreateServiceSheet = true
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Nouveau Service", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Ajouter Service", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                         }
 
-                        if (myServices.isEmpty()) {
+                        if (myOfferedServices.isEmpty()) {
                             item {
                                 Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color.White)
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(24.dp),
+                                        modifier = Modifier.padding(28.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Icon(Icons.Default.Business, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                                        Icon(Icons.Default.Build, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Text("Aucun service configuré pour le moment.", fontWeight = FontWeight.Bold, color = Color(0xFF334155))
-                                        Text("Créez votre première fiche d'établissement pour recevoir des clients.", color = Color.Gray, fontSize = 12.sp)
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text("Aucun service créé pour l'instant", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                        Text(
+                                            "Créez votre première prestation (vidange, freinage, diagnostic, vente pièces...) avec son tarif en FCFA.",
+                                            color = Color.Gray,
+                                            fontSize = 12.sp,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            modifier = Modifier.padding(vertical = 6.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
                                         Button(
                                             onClick = {
-                                                editingService = null
-                                                showFormSheet = true
+                                                serviceToEdit = null
+                                                showCreateServiceSheet = true
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
+                                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                            shape = RoundedCornerShape(12.dp)
                                         ) {
-                                            Text("Créer un service maintenant", color = Color.White)
+                                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("Créer une prestation", color = Color.White, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
                             }
                         } else {
-                            items(myServices, key = { it.id }) { provider ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 12.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.Top
-                                        ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(provider.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-                                                Spacer(modifier = Modifier.height(2.dp))
-                                                Text("${provider.category.title} • ${provider.city}", color = BluePrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                                if (!provider.phone.isBlank()) {
-                                                    Text("Tél : ${provider.phone}", color = Color.Gray, fontSize = 12.sp)
-                                                }
-                                            }
-
-                                            Row {
-                                                IconButton(
-                                                    onClick = {
-                                                        editingService = provider
-                                                        showFormSheet = true
-                                                    }
-                                                ) {
-                                                    Icon(Icons.Default.Edit, contentDescription = "Modifier", tint = BluePrimary)
-                                                }
-                                                IconButton(
-                                                    onClick = {
-                                                        servicesViewModel.deleteService(provider.id)
-                                                        Toast.makeText(context, "Service supprimé", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                ) {
-                                                    Icon(Icons.Default.Delete, contentDescription = "Supprimer", tint = Color.Red)
-                                                }
-                                            }
+                            items(myOfferedServices, key = { it.id }) { service ->
+                                OfferedServiceProCard(
+                                    service = service,
+                                    onEdit = {
+                                        serviceToEdit = service
+                                        showCreateServiceSheet = true
+                                    },
+                                    onDelete = {
+                                        servicesViewModel.deleteOfferedService(service.id) {
+                                            Toast.makeText(context, "Prestation supprimée", Toast.LENGTH_SHORT).show()
                                         }
-
-                                        if (provider.description.isNotBlank()) {
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            Text(
-                                                text = provider.description,
-                                                color = Color(0xFF475569),
-                                                fontSize = 12.sp,
-                                                maxLines = 2
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.height(12.dp))
-
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(Color(0xFFF1F5F9), shape = RoundedCornerShape(12.dp))
-                                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(10.dp)
-                                                        .clip(CircleShape)
-                                                        .background(if (provider.isOpen) Color(0xFF10B981) else Color(0xFFEF4444))
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(
-                                                    text = if (provider.isOpen) "Ouvert aux clients" else "Fermé actuellement",
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 13.sp,
-                                                    color = if (provider.isOpen) Color(0xFF047857) else Color(0xFFB91C1C)
-                                                )
-                                            }
-
-                                            Switch(
-                                                checked = provider.isOpen,
-                                                onCheckedChange = { isOpen ->
-                                                    servicesViewModel.toggleServiceStatus(provider.id, isOpen)
-                                                    Toast.makeText(context, if (isOpen) "Statut: Ouvert" else "Statut: Fermé", Toast.LENGTH_SHORT).show()
-                                                },
-                                                colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981))
-                                            )
-                                        }
+                                    },
+                                    onToggleAvailability = { isAvail ->
+                                        servicesViewModel.toggleOfferedServiceAvailability(service, isAvail)
+                                        Toast.makeText(context, if (isAvail) "Service activé" else "Service désactivé", Toast.LENGTH_SHORT).show()
                                     }
-                                }
+                                )
                             }
                         }
                     }
 
-                    // TAB 1: Rendez-vous Clients Reçus
+                    // TAB 1: RENDEZ-VOUS REÇUS
                     if (selectedTab == 1) {
                         item {
-                            Text("Demandes de Rendez-vous Clients", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1E293B))
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("Demandes de Rendez-vous Clients", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                            Spacer(modifier = Modifier.height(10.dp))
                         }
 
                         if (myBookings.isEmpty()) {
                             item {
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color.White)
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(24.dp),
+                                        modifier = Modifier.padding(28.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(44.dp))
+                                        Icon(Icons.Default.EventAvailable, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(44.dp))
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Text("Aucun rendez-vous client pour le moment.", fontWeight = FontWeight.Bold, color = Color(0xFF334155))
-                                        Text("Les réservations effectuées par vos clients s'afficheront ici.", color = Color.Gray, fontSize = 12.sp)
+                                        Text("Aucun rendez-vous pour le moment", fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                                        Text("Lorsque des clients réservent vos services, les créneaux s'affichent ici.", color = Color.Gray, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -475,9 +474,81 @@ fun ProviderPortalScreen(
                                     booking = booking,
                                     onUpdateStatus = { newStatus ->
                                         servicesViewModel.updateBookingStatus(booking.id, newStatus)
-                                        Toast.makeText(context, "Statut mis à jour : $newStatus", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Statut : $newStatus", Toast.LENGTH_SHORT).show()
                                     }
                                 )
+                            }
+                        }
+                    }
+
+                    // TAB 2: MON GARAGE & HORAIRES
+                    if (selectedTab == 2) {
+                        item {
+                            currentWorkshop?.let { workshop ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                ) {
+                                    Column(modifier = Modifier.padding(18.dp)) {
+                                        Text("Gestion de l'Atelier", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        // Open / Closed Status Toggle
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                                                .padding(14.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    text = if (workshop.isOpen) "Atelier Ouvert aux Clients" else "Atelier Fermé Actuellement",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp,
+                                                    color = if (workshop.isOpen) Color(0xFF047857) else Color(0xFFB91C1C)
+                                                )
+                                                Text(
+                                                    text = "Visibilité en direct sur la carte et l'accueil",
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF64748B)
+                                                )
+                                            }
+
+                                            Switch(
+                                                checked = workshop.isOpen,
+                                                onCheckedChange = { isOpen ->
+                                                    servicesViewModel.toggleServiceStatus(workshop.id, isOpen)
+                                                    Toast.makeText(context, if (isOpen) "Atelier marqué Ouvert" else "Atelier marqué Fermé", Toast.LENGTH_SHORT).show()
+                                                },
+                                                colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981))
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(14.dp))
+                                        Text("Coordonnées de l'établissement :", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text("📍 Ville : ${workshop.city}", fontSize = 13.sp, color = Color(0xFF334155))
+                                        Text("📞 Téléphone : ${workshop.phone}", fontSize = 13.sp, color = Color(0xFF334155))
+                                        Text("⏰ Horaires : ${workshop.hours ?: "08:00 - 18:30"}", fontSize = 13.sp, color = Color(0xFF334155))
+                                        Text("📝 Description : ${workshop.description}", fontSize = 13.sp, color = Color(0xFF475569))
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        Button(
+                                            onClick = { onNavigateToDetail(workshop) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Default.Storefront, contentDescription = null)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Voir ma fiche garage telle que vue par les clients", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -486,87 +557,184 @@ fun ProviderPortalScreen(
         }
     }
 
-    // Modal Form Sheet to Add or Edit Service
-    if (showFormSheet) {
+    // Modal Bottom Sheet: Prestataire creates/edits a service (OfferedService)
+    if (showCreateServiceSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showFormSheet = false },
+            onDismissRequest = { showCreateServiceSheet = false },
             sheetState = sheetState,
             containerColor = Color.White
         ) {
-            ServiceFormContent(
-                editingService = editingService,
-                onSave = { service ->
-                    if (editingService != null) {
-                        servicesViewModel.updateService(service)
-                        Toast.makeText(context, "Service mis à jour !", Toast.LENGTH_SHORT).show()
+            OfferedServiceFormSheet(
+                providerId = workshopId,
+                providerName = workshopName,
+                serviceToEdit = serviceToEdit,
+                onSave = { newService ->
+                    if (serviceToEdit != null) {
+                        servicesViewModel.updateOfferedService(newService) {
+                            Toast.makeText(context, "Prestation '${newService.title}' mise à jour !", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
-                        servicesViewModel.addService(service)
-                        Toast.makeText(context, "Nouveau service ajouté !", Toast.LENGTH_SHORT).show()
+                        servicesViewModel.addOfferedService(newService) {
+                            Toast.makeText(context, "Prestation '${newService.title}' créée avec succès !", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    showFormSheet = false
+                    showCreateServiceSheet = false
                 },
-                onCancel = { showFormSheet = false }
+                onCancel = { showCreateServiceSheet = false }
             )
+        }
+    }
+}
+
+@Composable
+fun OfferedServiceProCard(
+    service: OfferedService,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onToggleAvailability: (Boolean) -> Unit
+) {
+    val formatter = remember { NumberFormat.getNumberInstance(Locale.FRANCE) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = service.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            color = BluePrimary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = service.category,
+                                color = BluePrimary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Timer, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(service.durationMinutes, fontSize = 11.sp, color = Color.Gray)
+                        }
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Modifier", tint = BluePrimary)
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Supprimer", tint = Color.Red)
+                    }
+                }
+            }
+
+            if (service.description.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = service.description,
+                    color = Color(0xFF475569),
+                    fontSize = 12.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Payments, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${formatter.format(service.priceCfa)} FCFA",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF059669)
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (service.isAvailable) "Disponible" else "Suspendu",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (service.isAvailable) Color(0xFF047857) else Color(0xFFDC2626)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Switch(
+                        checked = service.isAvailable,
+                        onCheckedChange = onToggleAvailability,
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981))
+                    )
+                }
+            }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceFormContent(
-    editingService: ServiceProvider?,
-    onSave: (ServiceProvider) -> Unit,
+fun OfferedServiceFormSheet(
+    providerId: String,
+    providerName: String,
+    serviceToEdit: OfferedService?,
+    onSave: (OfferedService) -> Unit,
     onCancel: () -> Unit
 ) {
-    var name by remember { mutableStateOf(editingService?.name ?: "") }
-    var selectedCategory by remember { mutableStateOf(editingService?.category ?: ServiceCategory.MECANICIEN) }
+    var title by remember { mutableStateOf(serviceToEdit?.title ?: "") }
+    var selectedCategory by remember { mutableStateOf(serviceToEdit?.category ?: "Mécanique") }
     var categoryExpanded by remember { mutableStateOf(false) }
+    var priceText by remember { mutableStateOf(serviceToEdit?.priceCfa?.toString() ?: "15000") }
+    var duration by remember { mutableStateOf(serviceToEdit?.durationMinutes ?: "45 min") }
+    var description by remember { mutableStateOf(serviceToEdit?.description ?: "") }
+    var isAvailable by remember { mutableStateOf(serviceToEdit?.isAvailable ?: true) }
 
-    var city by remember { mutableStateOf(editingService?.city ?: "Bamako") }
-    var phone by remember { mutableStateOf(editingService?.phone ?: "+223 ") }
-    var description by remember { mutableStateOf(editingService?.description ?: "") }
-    var hours by remember { mutableStateOf(editingService?.hours ?: "08:00 - 18:00") }
-    var servicesOffered by remember { mutableStateOf(editingService?.servicesOffered ?: "Entretien, Réparation, Diagnostic") }
-    var latText by remember { mutableStateOf(editingService?.latitude?.toString() ?: "12.6392") }
-    var lngText by remember { mutableStateOf(editingService?.longitude?.toString() ?: "-8.0029") }
+    val categories = listOf(
+        "Mécanique",
+        "Diagnostic valise",
+        "Freinage",
+        "Climatisation",
+        "Électricité",
+        "Pneumatique",
+        "Carrosserie",
+        "Pièces détachées",
+        "Entretien périodique",
+        "Dépannage / Remorquage"
+    )
 
-    val context = LocalContext.current
-    val locationManager = remember { context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager }
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (granted) {
-            try {
-                val lastGps = locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                val lastNetwork = locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                val loc = lastGps ?: lastNetwork
-                if (loc != null) {
-                    latText = String.format(java.util.Locale.US, "%.5f", loc.latitude)
-                    lngText = String.format(java.util.Locale.US, "%.5f", loc.longitude)
-                    Toast.makeText(context, "Position GPS capturée avec succès !", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Mise à jour GPS en cours...", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: SecurityException) {
-                Toast.makeText(context, "Erreur lors de la capture GPS", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(context, "Permission GPS refusée", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    val districtPresets = listOf(
-        Triple("Badalabougou", 12.6212, -7.9895),
-        Triple("ACI 2000", 12.6285, -8.0210),
-        Triple("Hamdallaye", 12.6410, -8.0120),
-        Triple("Faladié", 12.5920, -7.9530),
-        Triple("Bacodjicoroni", 12.6015, -7.9950),
-        Triple("Lafiabougou", 12.6480, -8.0350),
-        Triple("Sogoniko", 12.6050, -7.9620),
-        Triple("Titibougou", 12.6820, -7.9150),
-        Triple("Kalaban Coro", 12.5680, -7.9810)
+    val quickServicePresets = listOf(
+        Triple("Vidange Moteur 10W40 + Filtre", 15000, "30 min"),
+        Triple("Diagnostic Électronique Valise OBD", 10000, "20 min"),
+        Triple("Plaquettes de frein avant avec pose", 20000, "45 min"),
+        Triple("Recharge Climatisation gaz R134a", 20000, "45 min"),
+        Triple("Montage + Équilibrage pneus", 10000, "30 min"),
+        Triple("Rénovation Alternateur / Démarreur", 25000, "1h30")
     )
 
     Column(
@@ -580,12 +748,19 @@ fun ServiceFormContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = if (editingService != null) "Modifier le Service" else "Ajouter un Service",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color(0xFF0F172A)
-            )
+            Column {
+                Text(
+                    text = if (serviceToEdit != null) "Modifier la Prestation" else "Créer une Nouvelle Prestation",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A)
+                )
+                Text(
+                    text = "Pour l'atelier : $providerName",
+                    fontSize = 11.sp,
+                    color = BluePrimary
+                )
+            }
             IconButton(onClick = onCancel) {
                 Icon(Icons.Default.Close, contentDescription = "Fermer")
             }
@@ -593,27 +768,59 @@ fun ServiceFormContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        if (serviceToEdit == null) {
+            Text("Suggestions rapides de prestations au Mali :", fontSize = 11.sp, color = Color(0xFF64748B))
+            Spacer(modifier = Modifier.height(6.dp))
+            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(quickServicePresets) { preset ->
+                    Surface(
+                        modifier = Modifier.clickable {
+                            title = preset.first
+                            priceText = preset.second.toString()
+                            duration = preset.third
+                            description = "Prestation professionnelle de ${preset.first} avec garantie pièce et main d'œuvre."
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFEFF6FF),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE))
+                    ) {
+                        Text(
+                            text = "+ ${preset.first}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = BluePrimary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Nom de l'établissement / Atelier") },
+            value = title,
+            onValueChange = { title = it },
+            label = { Text("Titre du service (ex: Vidange + Filtre à huile)") },
+            leadingIcon = { Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary) },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Category Selection Dropdown
+        // Category dropdown
         ExposedDropdownMenuBox(
             expanded = categoryExpanded,
             onExpandedChange = { categoryExpanded = !categoryExpanded },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = selectedCategory.title,
+                value = selectedCategory,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Catégorie de service") },
+                label = { Text("Catégorie de la prestation") },
+                leadingIcon = { Icon(Icons.Default.Category, contentDescription = null, tint = BluePrimary) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -624,11 +831,11 @@ fun ServiceFormContent(
                 expanded = categoryExpanded,
                 onDismissRequest = { categoryExpanded = false }
             ) {
-                ServiceCategory.entries.forEach { category ->
+                categories.forEach { cat ->
                     DropdownMenuItem(
-                        text = { Text(category.title) },
+                        text = { Text(cat) },
                         onClick = {
-                            selectedCategory = category
+                            selectedCategory = cat
                             categoryExpanded = false
                         }
                     )
@@ -636,152 +843,65 @@ fun ServiceFormContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             OutlinedTextField(
-                value = city,
-                onValueChange = { city = it },
-                label = { Text("Ville") },
-                modifier = Modifier.weight(1f),
+                value = priceText,
+                onValueChange = { priceText = it.filter { ch -> ch.isDigit() } },
+                label = { Text("Prix (FCFA)") },
+                leadingIcon = { Icon(Icons.Default.Payments, contentDescription = null, tint = Color(0xFF059669)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.weight(1.2f),
                 shape = RoundedCornerShape(12.dp)
             )
+
             OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Téléphone") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.weight(1.2f),
+                value = duration,
+                onValueChange = { duration = it },
+                label = { Text("Durée estimée") },
+                leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, tint = BluePrimary) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = hours,
-            onValueChange = { hours = it },
-            label = { Text("Horaires d'ouverture") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = servicesOffered,
-            onValueChange = { servicesOffered = it },
-            label = { Text("Prestations offertes (séparées par des virgules)") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text("Description & Adresse détaillée") },
+            label = { Text("Description & Pièces incluses dans ce service") },
             minLines = 3,
-            maxLines = 5,
+            maxLines = 4,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Map, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Géolocalisation GPS du Garage", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0F172A))
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            locationPermissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                            )
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = BluePrimary)
-                    ) {
-                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Capter GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Sélection rapide par quartier (Bamako) :", fontSize = 11.sp, color = Color(0xFF64748B))
-                Spacer(modifier = Modifier.height(6.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(districtPresets) { district ->
-                        Surface(
-                            modifier = Modifier.clickable {
-                                latText = district.second.toString()
-                                lngText = district.third.toString()
-                                Toast.makeText(context, "GPS réglé sur ${district.first}", Toast.LENGTH_SHORT).show()
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color.White,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
-                        ) {
-                            Text(
-                                text = "📍 ${district.first}",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF334155),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = latText,
-                        onValueChange = { latText = it },
-                        label = { Text("Latitude", fontSize = 12.sp) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-
-                    OutlinedTextField(
-                        value = lngText,
-                        onValueChange = { lngText = it },
-                        label = { Text("Longitude", fontSize = 12.sp) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                }
-            }
+            Text("Service immédiatement disponible pour réservation", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Switch(
+                checked = isAvailable,
+                onCheckedChange = { isAvailable = it },
+                colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981))
+            )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -797,27 +917,20 @@ fun ServiceFormContent(
 
             Button(
                 onClick = {
-                    if (name.isBlank()) return@Button
-                    val lat = latText.toDoubleOrNull() ?: 12.6392
-                    val lng = lngText.toDoubleOrNull() ?: -8.0029
-
-                    val service = ServiceProvider(
-                        id = editingService?.id ?: UUID.randomUUID().toString(),
-                        name = name,
+                    if (title.isBlank()) return@Button
+                    val price = priceText.toIntOrNull() ?: 15000
+                    val newService = OfferedService(
+                        id = serviceToEdit?.id ?: UUID.randomUUID().toString(),
+                        providerId = providerId,
+                        providerName = providerName,
+                        title = title.trim(),
+                        description = if (description.isBlank()) "Prestation de qualité réalisée par $providerName." else description.trim(),
+                        priceCfa = price,
+                        durationMinutes = if (duration.isBlank()) "45 min" else duration.trim(),
                         category = selectedCategory,
-                        description = description,
-                        city = city,
-                        phone = phone,
-                        rating = editingService?.rating ?: 5.0,
-                        latitude = lat,
-                        longitude = lng,
-                        isOpen = editingService?.isOpen ?: true,
-                        isFavorite = editingService?.isFavorite ?: false,
-                        isMine = true,
-                        hours = hours,
-                        servicesOffered = servicesOffered
+                        isAvailable = isAvailable
                     )
-                    onSave(service)
+                    onSave(newService)
                 },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
@@ -836,10 +949,12 @@ fun ProBookingCard(
     booking: BookingEntity,
     onUpdateStatus: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
+            .padding(bottom = 10.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -851,8 +966,8 @@ fun ProBookingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(booking.clientName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-                    Text("Tél: ${booking.clientPhone}", color = BluePrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(booking.clientName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                    Text("Tél: ${booking.clientPhone}", color = BluePrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
                 Surface(
                     color = when (booking.status) {
@@ -874,20 +989,34 @@ fun ProBookingCard(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Service : ${booking.serviceType}", fontWeight = FontWeight.Medium, fontSize = 13.sp)
-            Text("Date : ${booking.date} à ${booking.timeSlot}", color = Color.Gray, fontSize = 12.sp)
+            Text("Service demandé : ${booking.serviceType}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            Text("Créneau : ${booking.date} à ${booking.timeSlot}", color = Color.Gray, fontSize = 12.sp)
 
             if (booking.notes.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Notes : ${booking.notes}", color = Color(0xFF475569), fontSize = 12.sp)
+                Text("Véhicule / Remarque : ${booking.notes}", color = Color(0xFF475569), fontSize = 12.sp)
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${booking.clientPhone}"))
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
+                ) {
+                    Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Appeler", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+
                 OutlinedButton(
                     onClick = { onUpdateStatus("CONFIRME") },
                     modifier = Modifier.weight(1f),
@@ -895,6 +1024,7 @@ fun ProBookingCard(
                 ) {
                     Text("Confirmer", fontSize = 11.sp)
                 }
+
                 OutlinedButton(
                     onClick = { onUpdateStatus("TERMINE") },
                     modifier = Modifier.weight(1f),
@@ -902,13 +1032,12 @@ fun ProBookingCard(
                 ) {
                     Text("Terminé", fontSize = 11.sp)
                 }
-                OutlinedButton(
+
+                IconButton(
                     onClick = { onUpdateStatus("ANNULE") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Text("Annuler", fontSize = 11.sp)
+                    Icon(Icons.Default.Delete, contentDescription = "Annuler", tint = Color.Red, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -944,7 +1073,7 @@ fun ProAccessRestrictedCard(onLoginClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Seuls les professionnels dont le compte a été créé et authentifié par l'Administrateur peuvent accéder à la gestion des services.",
+                text = "Seuls les prestataires créés et validés par l'Administrateur ont accès à cet espace pour créer leurs services.",
                 color = Color(0xFF475569),
                 fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -957,7 +1086,7 @@ fun ProAccessRestrictedCard(onLoginClick: () -> Unit) {
             ) {
                 Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Se Connecter avec un Compte Pro", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Se Connecter avec un Compte Prestataire", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -978,10 +1107,9 @@ fun PortalStatCard(
             modifier = Modifier.padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
+            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color.White)
             Spacer(modifier = Modifier.height(2.dp))
             Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.9f))
         }
     }
 }
-

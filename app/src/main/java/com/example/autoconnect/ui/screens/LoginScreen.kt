@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -492,12 +493,39 @@ fun LoginScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Guest / Fast discovery access
+                    OutlinedButton(
+                        onClick = {
+                            authViewModel.loginAsGuest()
+                            Toast.makeText(context, "Connecté en mode invité !", Toast.LENGTH_SHORT).show()
+                            onLoginSuccess()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("guest_login_button"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color(0xFFF8FAFC)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
+                    ) {
+                        Text(
+                            text = "Explorer en tant qu'invité (Sans compte)",
+                            color = Color(0xFF475569),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Security Notice and Credentials Info
+            // Quick Role Demonstration Chips
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -524,7 +552,7 @@ fun LoginScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Authentification Sécurisée",
+                            text = "Connexion Rapide / Démonstration",
                             color = Color(0xFF1E3A8A),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
@@ -532,16 +560,65 @@ fun LoginScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "La saisie d'un mot de passe valide est OBLIGATOIRE pour tous les comptes Admin et Pro.",
+                        text = "Cliquez sur un profil pour pré-remplir les identifiants :",
                         color = Color(0xFF334155),
                         fontSize = 11.sp
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                selectedTabIndex = 0
+                                username = "admin"
+                                password = "00223"
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                        ) {
+                            Text("👑 Admin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BluePrimary)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                selectedTabIndex = 0
+                                username = "prestataire"
+                                password = "prestataire"
+                            },
+                            modifier = Modifier.weight(1.2f),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                        ) {
+                            Text("🔧 Prestataire", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                selectedTabIndex = 0
+                                username = "client"
+                                password = "client"
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                        ) {
+                            Text("🚗 Client", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF15803D))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "• Admin initial : nom 'admin' / mot de passe sécurisé (•••••)\n• Compte Pro : créé exclusivement par l'Admin",
-                        color = BluePrimary,
+                        text = "• Admin : Crée les prestataires uniquement\n• Prestataire : Crée ses prestations et ses tarifs\n• Client : Consulte tous les prestataires et leurs services",
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
+                        color = Color(0xFF1E3A8A),
+                        lineHeight = 16.sp
                     )
                 }
             }

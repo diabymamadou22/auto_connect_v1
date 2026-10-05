@@ -4,10 +4,12 @@ import android.content.Context
 import com.example.autoconnect.data.firebase.FirebaseManager
 import com.example.autoconnect.data.local.AppDatabase
 import com.example.autoconnect.data.local.BookingEntity
+import com.example.autoconnect.data.local.OfferedServiceEntity
 import com.example.autoconnect.data.local.ReviewEntity
 import com.example.autoconnect.data.local.ServiceProviderEntity
 import com.example.autoconnect.data.local.UserEntity
 import com.example.autoconnect.data.model.AppUser
+import com.example.autoconnect.data.model.OfferedService
 import com.example.autoconnect.data.model.Review
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
@@ -33,6 +35,7 @@ class AutoConnectRepository(
     private val tutorialDao = database.tutorialDao()
     private val bookingDao = database.bookingDao()
     private val chatDao = database.chatMessageDao()
+    private val offeredServiceDao = database.offeredServiceDao()
 
     val syncManager: DataSyncManager? = context?.let { DataSyncManager.getInstance(it) }
 
@@ -158,6 +161,26 @@ class AutoConnectRepository(
         userDao.updatePassword("admin", passwordHash)
     }
 
+    suspend fun createPrestataireOnly(username: String, password: String): Boolean {
+        val normalized = username.trim().lowercase()
+        val existing = userDao.getUserByUsername(normalized)
+        if (existing != null) return false
+
+        val userId = UUID.randomUUID().toString()
+        val passwordHash = PasswordHasher.hash(normalized, password)
+        val userEntity = UserEntity(id = userId, username = normalized, passwordHash = passwordHash, role = "prestataire")
+        userDao.insertUser(userEntity)
+        return true
+    }
+
+    suspend fun getPrestataires(): List<AppUser> {
+        return userDao.getUsersByRole("prestataire").map { AppUser(id = it.id, username = it.username, role = it.role) }
+    }
+
+    suspend fun deletePrestataire(userId: String) {
+        userDao.deleteUser(userId)
+    }
+
     suspend fun createProAccountByAdmin(
         username: String,
         password: String,
@@ -182,7 +205,7 @@ class AutoConnectRepository(
         val fullDesc = if (address.isNotBlank()) "$description ($address)" else description
 
         val serviceProvider = ServiceProvider(
-            id = UUID.randomUUID().toString(),
+            id = userId,
             name = serviceName,
             category = category,
             description = fullDesc,
@@ -193,9 +216,9 @@ class AutoConnectRepository(
             longitude = longitude,
             isOpen = true,
             isFavorite = false,
-            isMine = false,
+            isMine = true,
             hours = "08:00 - 18:00",
-            servicesOffered = "Maintenance, Réparation Express, Diagnostic Pro"
+            servicesOffered = "Prestations sur mesure"
         )
         insertService(serviceProvider)
         return true
@@ -261,6 +284,32 @@ class AutoConnectRepository(
 
     suspend fun deleteService(id: String) {
         serviceDao.deleteService(id)
+        offeredServiceDao.deleteServicesForProvider(id)
+    }
+
+    // --- OFFERED SERVICES (PRESTATIONS DES PRESTATAIRES) ---
+    fun getOfferedServicesForProvider(providerId: String): Flow<List<OfferedService>> {
+        return offeredServiceDao.getServicesForProvider(providerId).map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    fun getAllOfferedServices(): Flow<List<OfferedService>> {
+        return offeredServiceDao.getAllServices().map { list ->
+            list.map { it.toDomainModel() }
+        }
+    }
+
+    suspend fun addOfferedService(service: OfferedService) {
+        offeredServiceDao.insertService(OfferedServiceEntity.fromDomainModel(service))
+    }
+
+    suspend fun updateOfferedService(service: OfferedService) {
+        offeredServiceDao.updateService(OfferedServiceEntity.fromDomainModel(service))
+    }
+
+    suspend fun deleteOfferedService(id: String) {
+        offeredServiceDao.deleteService(id)
     }
 
     suspend fun toggleFavorite(id: String) {

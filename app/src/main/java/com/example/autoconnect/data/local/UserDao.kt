@@ -19,4 +19,10 @@ interface UserDao {
 
     @Query("UPDATE users SET passwordHash = :passwordHash WHERE LOWER(username) = LOWER(:username)")
     suspend fun updatePassword(username: String, passwordHash: String)
+
+    @Query("SELECT * FROM users WHERE role = :role")
+    suspend fun getUsersByRole(role: String): List<UserEntity>
+
+    @Query("DELETE FROM users WHERE id = :id")
+    suspend fun deleteUser(id: String)
 }

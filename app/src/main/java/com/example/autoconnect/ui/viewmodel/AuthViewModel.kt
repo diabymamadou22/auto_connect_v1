@@ -60,6 +60,15 @@ class AuthViewModel(private val repository: AutoConnectRepository) : ViewModel()
         _errorMessage.value = null
     }
 
+    fun loginAsGuest() {
+        _currentUser.value = AppUser(
+            id = "guest_user",
+            username = "Invité AutoConnect",
+            role = "client"
+        )
+        _errorMessage.value = null
+    }
+
     // Strict authentication required for all accounts (Admin, Pro, Client)
 
     fun updateAdminPassword(newPassword: String, onResult: (Boolean) -> Unit) {
@@ -75,6 +84,38 @@ class AuthViewModel(private val repository: AutoConnectRepository) : ViewModel()
                 _errorMessage.value = "Erreur lors de la mise à jour du mot de passe"
                 onResult(false)
             }
+        }
+    }
+
+    private val _prestataires = MutableStateFlow<List<AppUser>>(emptyList())
+    val prestataires: StateFlow<List<AppUser>> = _prestataires.asStateFlow()
+
+    fun loadPrestataires() {
+        viewModelScope.launch {
+            _prestataires.value = repository.getPrestataires()
+        }
+    }
+
+    fun createPrestataire(username: String, password: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            val success = repository.createPrestataireOnly(username, password)
+            _isLoading.value = false
+            if (success) {
+                loadPrestataires()
+                onResult(true)
+            } else {
+                _errorMessage.value = "Ce nom d'utilisateur est déjà utilisé"
+                onResult(false)
+            }
+        }
+    }
+
+    fun deletePrestataire(userId: String) {
+        viewModelScope.launch {
+            repository.deletePrestataire(userId)
+            loadPrestataires()
         }
     }
 

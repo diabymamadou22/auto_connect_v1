@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Auto Connect Mali</string>
+    <string name="default_web_client_id" translatable="false">184350051384-autoconnect.apps.googleusercontent.com</string>
 </resources>

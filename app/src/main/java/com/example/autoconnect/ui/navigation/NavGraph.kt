@@ -18,6 +18,7 @@ import com.example.autoconnect.ui.screens.CostEstimatorScreen
 import com.example.autoconnect.ui.screens.DirectChatScreen
 import com.example.autoconnect.ui.screens.EmergencyScreen
 import com.example.autoconnect.ui.screens.HomeScreen
+import com.example.autoconnect.ui.screens.LocalMechanicSearchScreen
 import com.example.autoconnect.ui.screens.LoginScreen
 import com.example.autoconnect.ui.screens.MaintenanceLogScreen
 import com.example.autoconnect.ui.screens.MapScreen
@@ -54,6 +55,7 @@ sealed class Screen(val route: String) {
     object Bookings : Screen("bookings")
     object TowingRequest : Screen("towing_request")
     object VehicleHealthReport : Screen("vehicle_health_report")
+    object MechanicSearch : Screen("mechanic_search")
     object ChatList : Screen("chat_list")
     object DirectChat : Screen("direct_chat/{providerId}") {
         fun createRoute(providerId: String) = "direct_chat/$providerId"
@@ -136,6 +138,9 @@ fun NavGraph(
                 onNavigateToChatList = {
                     navController.navigate(Screen.ChatList.route)
                 },
+                onNavigateToMechanicSearch = {
+                    navController.navigate(Screen.MechanicSearch.route)
+                },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
@@ -170,6 +175,7 @@ fun NavGraph(
 
         composable(Screen.AddService.route) {
             AddServiceScreen(
+                authViewModel = authViewModel,
                 servicesViewModel = servicesViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -310,6 +316,24 @@ fun NavGraph(
                 servicesViewModel = servicesViewModel,
                 onNavigateToChat = { targetProviderId ->
                     navController.navigate(Screen.DirectChat.createRoute(targetProviderId))
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.MechanicSearch.route) {
+            LocalMechanicSearchScreen(
+                onNavigateToDetail = { provider ->
+                    navController.navigate(Screen.ProviderDetail.createRoute(provider.id))
+                },
+                onNavigateToChat = { targetProviderId ->
+                    navController.navigate(Screen.DirectChat.createRoute(targetProviderId))
+                },
+                onNavigateToBooking = { provider ->
+                    navController.navigate(Screen.Bookings.route)
+                },
+                onNavigateToMap = {
+                    navController.navigate(Screen.Map.route)
                 },
                 onBack = { navController.popBackStack() }
             )

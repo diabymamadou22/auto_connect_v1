@@ -29,7 +29,8 @@ object SampleData {
             latitude = 12.8699,
             longitude = -8.0026,
             hours = "07:30 - 18:30",
-            servicesOffered = "Diagnostic électronique, Révision moteur, Freinage"
+            servicesOffered = "Diagnostic électronique, Révision moteur, Freinage",
+            isMine = true
         ),
         ServiceProvider(
             id = "p2",
@@ -348,6 +349,152 @@ object SampleData {
             comment = "⚡ Montage et équilibrage de 4 pneus en moins de 30 minutes. Impeccable !",
             rating = 5.0,
             createdAt = "2026-08-08 11:10"
+        )
+    )
+
+    val sampleOfferedServices = listOf(
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_1",
+            providerId = "g1",
+            providerName = "Garage Mécanique Koulikoro",
+            title = "Vidange Moteur Complète + Filtre à Huile",
+            description = "Huile haute performance 10W40/15W40, remplacement filtre à huile, contrôle niveau liquide de freins et lave-glace.",
+            priceCfa = 15000,
+            durationMinutes = "30 min",
+            category = "Mécanique",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_2",
+            providerId = "g1",
+            providerName = "Garage Mécanique Koulikoro",
+            title = "Diagnostic Électronique Valise OBD2",
+            description = "Lecture et effacement des codes défauts moteur, ABS, Airbag, analyse des données en direct des capteurs.",
+            priceCfa = 10000,
+            durationMinutes = "20 min",
+            category = "Diagnostic",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_3",
+            providerId = "g1",
+            providerName = "Garage Mécanique Koulikoro",
+            title = "Révision Complète Freinage Avant & Arrière",
+            description = "Changement plaquettes de frein, contrôle disques, dépoussiérage des tambours arrières et purge du circuit.",
+            priceCfa = 20000,
+            durationMinutes = "45 min",
+            category = "Freinage",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_4",
+            providerId = "m2",
+            providerName = "Atelier Mécanique ACI 2000",
+            title = "Diagnostic Valise OBD & Contrôle Électronique",
+            description = "Banc diagnostic multimarque complet (Toyota, Mercedes, Hyundai, Nissan), rapport d'erreurs détaillé imprimé.",
+            priceCfa = 10000,
+            durationMinutes = "30 min",
+            category = "Diagnostic",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_5",
+            providerId = "m2",
+            providerName = "Atelier Mécanique ACI 2000",
+            title = "Recharge Climatisation R134a + Détection Fuite",
+            description = "Tirage au vide du circuit de clim, injection gaz frigorigène R134a, huile compresseur et traceur UV anti-fuite.",
+            priceCfa = 20000,
+            durationMinutes = "45 min",
+            category = "Climatisation",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_6",
+            providerId = "m2",
+            providerName = "Atelier Mécanique ACI 2000",
+            title = "Nettoyage & Tarage des Injecteurs Diesel",
+            description = "Banc de test ultrason pour injecteurs Common Rail, changement des joints pare-feu et optimisation consommation.",
+            priceCfa = 25000,
+            durationMinutes = "1h30",
+            category = "Injection",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_7",
+            providerId = "p1",
+            providerName = "Pièces Auto Mali",
+            title = "Batterie 12V 70Ah Neuve avec Installation",
+            description = "Batterie certifiée garantie 12 mois, contrôle alternateur et test de charge électrique du véhicule inclus.",
+            priceCfa = 45000,
+            durationMinutes = "20 min",
+            category = "Batterie",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_8",
+            providerId = "p1",
+            providerName = "Pièces Auto Mali",
+            title = "Kit Filtres Entretien Complet (Air + Huile + Gasoil)",
+            description = "Pack filtration d'origine Bosch/Mann pour Toyota, Hyundai ou Peugeot, protection optimale du moteur.",
+            priceCfa = 22000,
+            durationMinutes = "20 min",
+            category = "Pièces",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_9",
+            providerId = "p2",
+            providerName = "Pneus Experts",
+            title = "Montage + Équilibrage Électronique 4 Pneus",
+            description = "Démontage, montage sur jante tôle ou alu, équilibrage dynamique au plomb écologique et gonflage pression optimale.",
+            priceCfa = 12000,
+            durationMinutes = "40 min",
+            category = "Pneumatique",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_10",
+            providerId = "p2",
+            providerName = "Pneus Experts",
+            title = "Parallélisme & Géométrie Laser Train Avant",
+            description = "Réglage précision par caméras 3D pour éviter l'usure asymétrique des pneus et assurer la tenue de route.",
+            priceCfa = 15000,
+            durationMinutes = "35 min",
+            category = "Pneumatique",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_11",
+            providerId = "g2",
+            providerName = "Garage Électro-Mécanique Faladié",
+            title = "Révision et Rénovation Alternateur 12V",
+            description = "Changement régulateur de tension, pont de diodes, roulements et test de tension stabilisée sur banc.",
+            priceCfa = 25000,
+            durationMinutes = "1h30",
+            category = "Électricité",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_12",
+            providerId = "g2",
+            providerName = "Garage Électro-Mécanique Faladié",
+            title = "Dépannage Démarreur & Solénoïde",
+            description = "Remplacement des balais charbons, nettoyage induit et test d'entraînement pignon.",
+            priceCfa = 18000,
+            durationMinutes = "1h",
+            category = "Électricité",
+            isAvailable = true
+        ),
+        com.example.autoconnect.data.local.OfferedServiceEntity(
+            id = "s_13",
+            providerId = "c1",
+            providerName = "Carrosserie Excellence",
+            title = "Peinture Complète Éléments au Four",
+            description = "Préparation tôle, apprêt antirouille, peinture teinte constructeur vernie et étuvage au four.",
+            priceCfa = 35000,
+            durationMinutes = "24h",
+            category = "Carrosserie",
+            isAvailable = true
         )
     )
 }

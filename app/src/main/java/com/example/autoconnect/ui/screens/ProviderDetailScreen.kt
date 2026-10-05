@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,16 +27,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,12 +51,15 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -67,12 +78,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.autoconnect.data.local.BookingEntity
+import com.example.autoconnect.data.model.OfferedService
 import com.example.autoconnect.data.model.Review
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
 import com.example.autoconnect.ui.theme.BluePrimary
 import com.example.autoconnect.ui.viewmodel.AuthViewModel
 import com.example.autoconnect.ui.viewmodel.ServicesViewModel
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -92,6 +106,13 @@ fun ProviderDetailScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     val reviewsFlow = remember(provider.id) { servicesViewModel.getReviewsForService(provider.id) }
     val reviews by reviewsFlow.collectAsState()
+
+    val offeredServicesFlow = remember(provider.id) { servicesViewModel.getOfferedServicesForProvider(provider.id) }
+    val offeredServices by offeredServicesFlow.collectAsState()
+
+    var selectedServiceForBooking by remember { mutableStateOf<OfferedService?>(null) }
+    var showBookingSheet by remember { mutableStateOf(false) }
+    val bookingSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var userRating by remember { mutableDoubleStateOf(5.0) }
     var commentText by remember { mutableStateOf("") }
@@ -233,10 +254,10 @@ fun ProviderDetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Quick Action Buttons (Call, WhatsApp, Map)
+                        // Quick Action Buttons (Call, WhatsApp, Map, Chat)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             ActionButton(
                                 modifier = Modifier.weight(1f),
@@ -277,6 +298,194 @@ fun ProviderDetailScreen(
                                     context.startActivity(intent)
                                 }
                             )
+
+                            ActionButton(
+                                modifier = Modifier.weight(1f),
+                                title = "Message",
+                                icon = Icons.Default.Chat,
+                                color = BluePrimary,
+                                onClick = {
+                                    onNavigateToChat(provider.id)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // SECTION: Prestations & Tarifs proposés par le Prestataire
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Prestations & Tarifs",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+
+                            Surface(
+                                color = BluePrimary.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "${offeredServices.size} service(s)",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BluePrimary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "Sélectionnez une prestation pour réserver votre créneau directement :",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B),
+                            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                        )
+
+                        val formatter = remember { NumberFormat.getNumberInstance(Locale.FRANCE) }
+
+                        if (offeredServices.isEmpty()) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF8FAFC),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Text(
+                                        text = "🔧 Prestation Standard & Diagnostic",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                    Text(
+                                        text = if (!provider.servicesOffered.isNull_or_blank()) "Prestations annoncées : ${provider.servicesOffered}" else "Révision, diagnostic valise et dépannage sur devis.",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF475569),
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button(
+                                        onClick = {
+                                            selectedServiceForBooking = OfferedService(
+                                                id = "custom_${provider.id}",
+                                                providerId = provider.id,
+                                                providerName = provider.name,
+                                                title = "Révision & Diagnostic Général",
+                                                description = "Demande d'intervention pour mon véhicule",
+                                                priceCfa = 15000
+                                            )
+                                            showBookingSheet = true
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("📅 Prendre Rendez-vous", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                offeredServices.forEach { service ->
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFFF8FAFC),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                    ) {
+                                        Column(modifier = Modifier.padding(14.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.Top
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = service.title,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 15.sp,
+                                                        color = Color(0xFF0F172A)
+                                                    )
+                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Surface(
+                                                            color = BluePrimary.copy(alpha = 0.1f),
+                                                            shape = RoundedCornerShape(6.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = service.category,
+                                                                color = BluePrimary,
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Icon(Icons.Default.Timer, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(13.dp))
+                                                            Spacer(modifier = Modifier.width(2.dp))
+                                                            Text(service.durationMinutes, fontSize = 11.sp, color = Color.Gray)
+                                                        }
+                                                    }
+                                                }
+
+                                                Text(
+                                                    text = "${formatter.format(service.priceCfa)} F",
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 15.sp,
+                                                    color = Color(0xFF059669)
+                                                )
+                                            }
+
+                                            if (service.description.isNotBlank()) {
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Text(
+                                                    text = service.description,
+                                                    fontSize = 12.sp,
+                                                    color = Color(0xFF475569)
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(10.dp))
+
+                                            Button(
+                                                onClick = {
+                                                    selectedServiceForBooking = service
+                                                    showBookingSheet = true
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text("Réserver cette prestation", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -735,6 +944,241 @@ fun ProviderDetailScreen(
                 Spacer(modifier = Modifier.height(30.dp))
             }
         }
+
+        if (showBookingSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showBookingSheet = false },
+                sheetState = bookingSheetState,
+                containerColor = Color.White
+            ) {
+                ClientBookingSheetContent(
+                    provider = provider,
+                    service = selectedServiceForBooking,
+                    currentUserName = currentUser?.username ?: "Client AutoConnect",
+                    onConfirm = { booking ->
+                        servicesViewModel.addBooking(booking) {
+                            Toast.makeText(context, "Rendez-vous pour '${booking.serviceType}' envoyé au garage !", Toast.LENGTH_LONG).show()
+                        }
+                        showBookingSheet = false
+                    },
+                    onCancel = { showBookingSheet = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ClientBookingSheetContent(
+    provider: ServiceProvider,
+    service: OfferedService?,
+    currentUserName: String,
+    onConfirm: (BookingEntity) -> Unit,
+    onCancel: () -> Unit
+) {
+    var clientName by remember { mutableStateOf(currentUserName) }
+    var clientPhone by remember { mutableStateOf("+223 ") }
+    var vehicleModel by remember { mutableStateOf("Toyota Corolla") }
+    var selectedDate by remember { mutableStateOf("Demain") }
+    var selectedTimeSlot by remember { mutableStateOf("09:00 - 10:00") }
+    var notes by remember { mutableStateOf("") }
+
+    val serviceTitle = service?.title ?: "Révision générale"
+    val priceText = service?.let { "${NumberFormat.getNumberInstance(Locale.FRANCE).format(it.priceCfa)} FCFA" } ?: "Sur devis"
+
+    val dateOptions = listOf("Aujourd'hui", "Demain", "Après-demain", "Samedi prochain")
+    val timeSlots = listOf("08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00", "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Réserver un Rendez-vous", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0F172A))
+                Text("Chez ${provider.name} (${provider.city})", fontSize = 12.sp, color = BluePrimary, fontWeight = FontWeight.Medium)
+            }
+            IconButton(onClick = onCancel) {
+                Icon(Icons.Default.Close, contentDescription = "Fermer")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Selected Service Summary Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFFEFF6FF),
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE))
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(serviceTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E3A8A))
+                    service?.durationMinutes?.let {
+                        Text("Durée estimée : $it", fontSize = 11.sp, color = Color(0xFF3B82F6))
+                    }
+                }
+                Surface(
+                    color = Color(0xFF059669),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = priceText,
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        OutlinedTextField(
+            value = clientName,
+            onValueChange = { clientName = it },
+            label = { Text("Votre Nom complet") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = clientPhone,
+            onValueChange = { clientPhone = it },
+            label = { Text("Numéro de Téléphone (+223)") },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = vehicleModel,
+            onValueChange = { vehicleModel = it },
+            label = { Text("Véhicule (Marque & Modèle)") },
+            leadingIcon = { Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = BluePrimary) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text("Jour souhaité :", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))
+        Spacer(modifier = Modifier.height(6.dp))
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(dateOptions) { d ->
+                val isSelected = selectedDate == d
+                Surface(
+                    modifier = Modifier.clickable { selectedDate = d },
+                    color = if (isSelected) BluePrimary else Color(0xFFF1F5F9),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = d,
+                        color = if (isSelected) Color.White else Color(0xFF334155),
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text("Créneau horaire :", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))
+        Spacer(modifier = Modifier.height(6.dp))
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(timeSlots) { slot ->
+                val isSelected = selectedTimeSlot == slot
+                Surface(
+                    modifier = Modifier.clickable { selectedTimeSlot = slot },
+                    color = if (isSelected) Color(0xFF059669) else Color(0xFFF1F5F9),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = slot,
+                        color = if (isSelected) Color.White else Color(0xFF334155),
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            label = { Text("Précisions (symptôme, voyant allumé...)") },
+            maxLines = 3,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Annuler")
+            }
+
+            Button(
+                onClick = {
+                    if (clientPhone.isBlank() || clientPhone.length < 8) return@Button
+                    val noteText = if (vehicleModel.isNotBlank()) "Véhicule: $vehicleModel. $notes" else notes
+                    val booking = BookingEntity(
+                        id = UUID.randomUUID().toString(),
+                        providerId = provider.id,
+                        providerName = provider.name,
+                        serviceType = serviceTitle,
+                        clientName = if (clientName.isBlank()) "Client AutoConnect" else clientName.trim(),
+                        clientPhone = clientPhone.trim(),
+                        date = selectedDate,
+                        timeSlot = selectedTimeSlot,
+                        status = "EN_ATTENTE",
+                        notes = noteText.trim()
+                    )
+                    onConfirm(booking)
+                },
+                modifier = Modifier.weight(1.3f),
+                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.DateRange, contentDescription = null)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Confirmer le RDV", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 

@@ -1,13 +1,10 @@
 package com.example.autoconnect.ui.screens
 
-import android.Manifest
-import android.content.Context
-import android.location.LocationManager
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,8 +22,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,10 +43,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,74 +62,72 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.autoconnect.data.model.ServiceCategory
-import com.example.autoconnect.data.model.ServiceProvider
+import com.example.autoconnect.data.model.OfferedService
 import com.example.autoconnect.ui.theme.BluePrimary
+import com.example.autoconnect.ui.viewmodel.AuthViewModel
 import com.example.autoconnect.ui.viewmodel.ServicesViewModel
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddServiceScreen(
+    authViewModel: AuthViewModel,
     servicesViewModel: ServicesViewModel,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val allServices by servicesViewModel.allServices.collectAsState()
 
-    var name by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(ServiceCategory.MECANICIEN) }
-    var categoryExpanded by remember { mutableStateOf(false) }
+    val isPrestataire = currentUser != null && (currentUser?.role == "prestataire" || currentUser?.role == "admin")
 
-    var city by remember { mutableStateOf("Bamako") }
-    var phone by remember { mutableStateOf("+223 ") }
-    var description by remember { mutableStateOf("") }
-    var hours by remember { mutableStateOf("08:00 - 18:00") }
-    var servicesOffered by remember { mutableStateOf("") }
-    var latText by remember { mutableStateOf("12.6392") }
-    var lngText by remember { mutableStateOf("-8.0029") }
-
-    val locationManager = remember { context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager }
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (granted) {
-            try {
-                val lastGps = locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                val lastNetwork = locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                val loc = lastGps ?: lastNetwork
-                if (loc != null) {
-                    latText = String.format(java.util.Locale.US, "%.5f", loc.latitude)
-                    lngText = String.format(java.util.Locale.US, "%.5f", loc.longitude)
-                    Toast.makeText(context, "Position GPS capturée avec succès !", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Mise à jour GPS en cours... Réessayez dans un instant.", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: SecurityException) {
-                Toast.makeText(context, "Erreur de géolocalisation", Toast.LENGTH_SHORT).show()
-            }
+    val myWorkshop = remember(allServices, currentUser) {
+        if (currentUser?.role == "admin") {
+            allServices.firstOrNull()
         } else {
-            Toast.makeText(context, "Permission GPS refusée", Toast.LENGTH_SHORT).show()
+            allServices.firstOrNull { it.id == currentUser?.id }
+                ?: allServices.firstOrNull { it.isMine }
+                ?: allServices.firstOrNull { it.name.contains(currentUser?.username ?: "", ignoreCase = true) }
         }
     }
 
-    val districtPresets = listOf(
-        Triple("Badalabougou", 12.6212, -7.9895),
-        Triple("ACI 2000", 12.6285, -8.0210),
-        Triple("Hamdallaye", 12.6410, -8.0120),
-        Triple("Faladié", 12.5920, -7.9530),
-        Triple("Bacodjicoroni", 12.6015, -7.9950),
-        Triple("Lafiabougou", 12.6480, -8.0350),
-        Triple("Sogoniko", 12.6050, -7.9620),
-        Triple("Titibougou", 12.6820, -7.9150),
-        Triple("Kalaban Coro", 12.5680, -7.9810)
+    val workshopId = myWorkshop?.id ?: "g1"
+    val workshopName = myWorkshop?.name ?: (currentUser?.username?.replaceFirstChar { it.uppercase() } + " Atelier Auto")
+
+    var title by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Mécanique") }
+    var categoryExpanded by remember { mutableStateOf(false) }
+    var priceText by remember { mutableStateOf("15000") }
+    var duration by remember { mutableStateOf("45 min") }
+    var description by remember { mutableStateOf("") }
+    var isAvailable by remember { mutableStateOf(true) }
+
+    val categories = listOf(
+        "Mécanique",
+        "Diagnostic valise",
+        "Freinage",
+        "Climatisation",
+        "Électricité",
+        "Pneumatique",
+        "Carrosserie",
+        "Pièces détachées",
+        "Entretien périodique",
+        "Dépannage / Remorquage"
+    )
+
+    val quickServicePresets = listOf(
+        Triple("Vidange Moteur 10W40 + Filtre", 15000, "30 min"),
+        Triple("Diagnostic Électronique Valise OBD", 10000, "20 min"),
+        Triple("Plaquettes de frein avant avec pose", 20000, "45 min"),
+        Triple("Recharge Climatisation gaz R134a", 20000, "45 min"),
+        Triple("Montage + Équilibrage 4 pneus", 12000, "40 min"),
+        Triple("Rénovation Alternateur / Démarreur", 25000, "1h30")
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ajouter un service", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Créer une Prestation", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Retour", tint = Color.White)
@@ -134,233 +137,230 @@ fun AddServiceScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
-        ) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Nom de l'établissement") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Category Dropdown
-            ExposedDropdownMenuBox(
-                expanded = categoryExpanded,
-                onExpandedChange = { categoryExpanded = !categoryExpanded },
-                modifier = Modifier.fillMaxWidth()
+        if (!isPrestataire) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                OutlinedTextField(
-                    value = selectedCategory.title,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Catégorie de service") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
+                Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFFFF9100), modifier = Modifier.size(64.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Rôle Prestataire Requis",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color(0xFF0F172A)
                 )
-                ExposedDropdownMenu(
-                    expanded = categoryExpanded,
-                    onDismissRequest = { categoryExpanded = false }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Dans AutoConnect Mali :\n• L'Administrateur crée les prestataires (garages / ateliers).\n• Les Prestataires créent leurs services et leurs tarifs.\n• Les Clients consultent les prestataires et réservent leurs prestations.",
+                    color = Color(0xFF475569),
+                    fontSize = 13.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = onBack,
+                    colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    ServiceCategory.entries.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category.title) },
-                            onClick = {
-                                selectedCategory = category
-                                categoryExpanded = false
-                            }
-                        )
-                    }
+                    Text("Retour à l'accueil", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedTextField(
-                value = city,
-                onValueChange = { city = it },
-                label = { Text("Ville (ex: Bamako, Ségou, Kayes)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Téléphone") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description des services") },
-                maxLines = 3,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedTextField(
-                value = hours,
-                onValueChange = { hours = it },
-                label = { Text("Horaires d'ouverture (ex: 08:00 - 18:00)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedTextField(
-                value = servicesOffered,
-                onValueChange = { servicesOffered = it },
-                label = { Text("Prestations proposées (ex: Vidange, Diagnostique, Freins)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                // Info Banner
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Map, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Géolocalisation GPS du Garage", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0F172A))
+                            Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("Nouvelle Prestation pour votre Atelier", fontWeight = FontWeight.Bold, color = BluePrimary, fontSize = 15.sp)
                         }
-
-                        OutlinedButton(
-                            onClick = {
-                                locationPermissionLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                )
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = BluePrimary)
-                        ) {
-                            Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Capter GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Sélection rapide par quartier (Bamako) :", fontSize = 11.sp, color = Color(0xFF64748B))
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        items(districtPresets) { district ->
-                            Surface(
-                                modifier = Modifier.clickable {
-                                    latText = district.second.toString()
-                                    lngText = district.third.toString()
-                                    Toast.makeText(context, "GPS réglé sur ${district.first}", Toast.LENGTH_SHORT).show()
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
-                            ) {
-                                Text(
-                                    text = "📍 ${district.first}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF334155),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = latText,
-                            onValueChange = { latText = it },
-                            label = { Text("Latitude", fontSize = 12.sp) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-
-                        OutlinedTextField(
-                            value = lngText,
-                            onValueChange = { lngText = it },
-                            label = { Text("Longitude", fontSize = 12.sp) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Établissement rattaché : $workshopName (${myWorkshop?.city ?: "Bamako"})",
+                            fontSize = 12.sp,
+                            color = Color(0xFF1E3A8A)
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Button(
-                onClick = {
-                    if (name.isBlank() || phone.isBlank() || description.isBlank()) {
-                        Toast.makeText(context, "Veuillez remplir les champs obligatoires", Toast.LENGTH_SHORT).show()
-                        return@Button
+                Text("Suggestions rapides de services :", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(quickServicePresets) { preset ->
+                        Surface(
+                            modifier = Modifier.clickable {
+                                title = preset.first
+                                priceText = preset.second.toString()
+                                duration = preset.third
+                                description = "Prestation professionnelle de ${preset.first} garantie par $workshopName."
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
+                        ) {
+                            Text(
+                                text = "+ ${preset.first}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = BluePrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
                     }
-                    val lat = latText.toDoubleOrNull() ?: 12.6392
-                    val lng = lngText.toDoubleOrNull() ?: -8.0029
+                }
 
-                    val newProvider = ServiceProvider(
-                        id = UUID.randomUUID().toString(),
-                        name = name.trim(),
-                        category = selectedCategory,
-                        description = description.trim(),
-                        city = city.trim(),
-                        phone = phone.trim(),
-                        rating = 5.0,
-                        latitude = lat,
-                        longitude = lng,
-                        isOpen = true,
-                        isFavorite = false,
-                        isMine = true,
-                        hours = hours.trim(),
-                        servicesOffered = servicesOffered.trim()
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Titre de la prestation (ex: Vidange Moteur + Filtre)") },
+                    leadingIcon = { Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Category dropdown
+                ExposedDropdownMenuBox(
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = !categoryExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategory,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Catégorie de prestation") },
+                        leadingIcon = { Icon(Icons.Default.Category, contentDescription = null, tint = BluePrimary) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false }
+                    ) {
+                        categories.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat) },
+                                onClick = {
+                                    selectedCategory = cat
+                                    categoryExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = priceText,
+                        onValueChange = { priceText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Tarif en FCFA") },
+                        leadingIcon = { Icon(Icons.Default.Payments, contentDescription = null, tint = Color(0xFF059669)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1.2f),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
-                    servicesViewModel.addService(newProvider)
-                    Toast.makeText(context, "Service enregistré !", Toast.LENGTH_SHORT).show()
-                    onBack()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("Enregistrer le service", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    OutlinedTextField(
+                        value = duration,
+                        onValueChange = { duration = it },
+                        label = { Text("Durée estimée") },
+                        leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, tint = BluePrimary) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description & Pièces incluses dans la prestation") },
+                    minLines = 3,
+                    maxLines = 5,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Disponibilité immédiate pour réservation", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Les clients pourront réserver ce service", fontSize = 11.sp, color = Color.Gray)
+                    }
+                    Switch(
+                        checked = isAvailable,
+                        onCheckedChange = { isAvailable = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981))
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = {
+                        if (title.isBlank()) {
+                            Toast.makeText(context, "Veuillez entrer le titre de la prestation", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val price = priceText.toIntOrNull() ?: 15000
+                        val newService = OfferedService(
+                            id = UUID.randomUUID().toString(),
+                            providerId = workshopId,
+                            providerName = workshopName,
+                            title = title.trim(),
+                            description = if (description.isBlank()) "Prestation certifiée réalisée par $workshopName." else description.trim(),
+                            priceCfa = price,
+                            durationMinutes = if (duration.isBlank()) "45 min" else duration.trim(),
+                            category = selectedCategory,
+                            isAvailable = isAvailable
+                        )
+
+                        servicesViewModel.addOfferedService(newService) {
+                            Toast.makeText(context, "Prestation '$title' ajoutée au catalogue !", Toast.LENGTH_SHORT).show()
+                            onBack()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("ENREGISTRER LA PRESTATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
             }
         }
     }

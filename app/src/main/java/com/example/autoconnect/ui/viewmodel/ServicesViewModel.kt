@@ -3,6 +3,7 @@ package com.example.autoconnect.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.autoconnect.data.model.OfferedService
 import com.example.autoconnect.data.model.Review
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
@@ -62,6 +63,49 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val allOfferedServices: StateFlow<List<OfferedService>> = repository.getAllOfferedServices()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun getOfferedServicesForProvider(providerId: String): StateFlow<List<OfferedService>> {
+        return repository.getOfferedServicesForProvider(providerId)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+    }
+
+    fun addOfferedService(service: OfferedService, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.addOfferedService(service)
+            onComplete()
+        }
+    }
+
+    fun updateOfferedService(service: OfferedService, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.updateOfferedService(service)
+            onComplete()
+        }
+    }
+
+    fun deleteOfferedService(serviceId: String, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.deleteOfferedService(serviceId)
+            onComplete()
+        }
+    }
+
+    fun toggleOfferedServiceAvailability(service: OfferedService, isAvailable: Boolean) {
+        viewModelScope.launch {
+            repository.updateOfferedService(service.copy(isAvailable = isAvailable))
+        }
+    }
 
     fun syncDataNow(onComplete: ((Boolean, String) -> Unit)? = null) {
         viewModelScope.launch {
@@ -244,6 +288,13 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
     fun deleteBooking(id: String) {
         viewModelScope.launch {
             repository.deleteBooking(id)
+        }
+    }
+
+    fun addBooking(booking: com.example.autoconnect.data.local.BookingEntity, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.insertBooking(booking)
+            onComplete()
         }
     }
 

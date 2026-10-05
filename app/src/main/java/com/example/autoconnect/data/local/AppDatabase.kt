@@ -12,8 +12,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [UserEntity::class, ServiceProviderEntity::class, ReviewEntity::class, TutorialEntity::class, BookingEntity::class, ChatMessageEntity::class],
-    version = 4,
+    entities = [
+        UserEntity::class,
+        ServiceProviderEntity::class,
+        ReviewEntity::class,
+        TutorialEntity::class,
+        BookingEntity::class,
+        ChatMessageEntity::class,
+        OfferedServiceEntity::class
+    ],
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -24,6 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun tutorialDao(): TutorialDao
     abstract fun bookingDao(): BookingDao
     abstract fun chatMessageDao(): ChatMessageDao
+    abstract fun offeredServiceDao(): OfferedServiceDao
 
     companion object {
         @Volatile
@@ -99,6 +108,9 @@ abstract class AppDatabase : RoomDatabase() {
             SampleData.sampleReviews.forEach { review ->
                 database.reviewDao().insertReview(review)
             }
+
+            // Seed Sample Offered Services
+            database.offeredServiceDao().insertAll(SampleData.sampleOfferedServices)
         }
     }
 }
