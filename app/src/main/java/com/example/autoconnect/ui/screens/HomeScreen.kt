@@ -118,6 +118,7 @@ import coil.compose.AsyncImage
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
 import com.example.autoconnect.data.sync.SyncStatus
+import com.example.autoconnect.ui.components.NearbyMapComponent
 import com.example.autoconnect.ui.theme.BluePrimary
 import com.example.autoconnect.ui.theme.EmergencyRed
 import com.example.autoconnect.ui.viewmodel.AuthViewModel
@@ -1027,67 +1028,19 @@ fun HomeScreen(
                 }
 
                 1 -> {
-                    // TAB 1: CARTE & PROXIMITE
-                    Column(
+                    // TAB 1: CARTE & PROXIMITE - Interactive Nearby Map Component
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onNavigateToMap() },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = BluePrimary)
-                        ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text("Carte Google Maps Interactive", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 18.sp)
-                                        Text("Localisez mécaniciens et boutiques de pièces à Bamako", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(
-                                    onClick = onNavigateToMap,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = BluePrimary),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("VOIR LA CARTE PLEIN ÉCRAN", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onNavigateToNearby() },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = EmergencyRed)
-                        ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text("Prestataires les plus proches", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 18.sp)
-                                        Text("Classement par distance GPS exacte", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(
-                                    onClick = onNavigateToNearby,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = EmergencyRed),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("AFFICHER LA LISTE DE PROXIMITÉ", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
+                        NearbyMapComponent(
+                            modifier = Modifier.fillMaxSize(),
+                            services = services,
+                            onNavigateToDetail = onNavigateToDetail,
+                            onExpandFullScreen = onNavigateToMap,
+                            isEmbedded = false
+                        )
                     }
                 }
 

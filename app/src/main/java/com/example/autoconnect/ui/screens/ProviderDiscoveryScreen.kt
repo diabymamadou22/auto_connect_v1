@@ -1053,7 +1053,7 @@ fun DiscoveryProviderCard(
                 }
 
                 // Quick Action Buttons
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     // Call Button
                     Surface(
                         onClick = onCallClick,
@@ -1062,12 +1062,12 @@ fun DiscoveryProviderCard(
                         modifier = Modifier.testTag("call_${provider.id}")
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Call, contentDescription = "Appeler", tint = Color(0xFF16A34A), modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Appeler", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF166534))
+                            Icon(Icons.Default.Call, contentDescription = "Appeler", tint = Color(0xFF16A34A), modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Appeler", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF166534), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 
@@ -1079,12 +1079,12 @@ fun DiscoveryProviderCard(
                         modifier = Modifier.testTag("chat_${provider.id}")
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Devis", tint = BluePrimary, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Devis", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BluePrimary)
+                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Devis", tint = BluePrimary, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Devis", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = BluePrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 
@@ -1096,12 +1096,12 @@ fun DiscoveryProviderCard(
                         modifier = Modifier.testTag("nav_${provider.id}")
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Navigation, contentDescription = "Itinéraire", tint = Color(0xFF7E22CE), modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7E22CE))
+                            Icon(Icons.Default.Navigation, contentDescription = "Itinéraire", tint = Color(0xFF7E22CE), modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("GPS", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7E22CE), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }

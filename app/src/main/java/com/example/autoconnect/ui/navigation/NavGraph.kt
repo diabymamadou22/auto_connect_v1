@@ -27,6 +27,7 @@ import com.example.autoconnect.ui.screens.ProviderDetailScreen
 import com.example.autoconnect.ui.screens.ProviderDiscoveryScreen
 import com.example.autoconnect.ui.screens.ProviderListScreen
 import com.example.autoconnect.ui.screens.ProviderPortalScreen
+import com.example.autoconnect.ui.screens.SplashScreen
 import com.example.autoconnect.ui.screens.TowingRequestScreen
 import com.example.autoconnect.ui.screens.TutorialsScreen
 import com.example.autoconnect.ui.screens.VehicleHealthReportScreen
@@ -34,6 +35,7 @@ import com.example.autoconnect.ui.viewmodel.AuthViewModel
 import com.example.autoconnect.ui.viewmodel.ServicesViewModel
 
 sealed class Screen(val route: String) {
+    object Splash : Screen("splash")
     object Login : Screen("login")
     object Home : Screen("home")
     object ProviderDetail : Screen("provider_detail/{providerId}") {
@@ -69,12 +71,23 @@ fun NavGraph(
     navController: NavHostController = rememberNavController()
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
-    val startDestination = if (currentUser != null) Screen.Home.route else Screen.Login.route
+    val startDestination = Screen.Splash.route
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+        composable(Screen.Splash.route) {
+            SplashScreen(
+                onSplashFinished = {
+                    val target = if (currentUser != null) Screen.Home.route else Screen.Login.route
+                    navController.navigate(target) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Login.route) {
             LoginScreen(
                 authViewModel = authViewModel,

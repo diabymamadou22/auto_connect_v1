@@ -56,6 +56,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -371,7 +372,7 @@ fun CostEstimatorScreen(
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         OutlinedButton(
                                             onClick = {
@@ -383,20 +384,22 @@ fun CostEstimatorScreen(
                                                 context.startActivity(Intent.createChooser(intent, "Partager le devis"))
                                             },
                                             modifier = Modifier.weight(1f),
-                                            shape = RoundedCornerShape(12.dp)
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)
                                         ) {
                                             Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Partager", color = Color.White, fontSize = 12.sp)
+                                            Text("Partager", color = Color.White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
 
                                         Button(
                                             onClick = onNavigateToMecaniciens,
                                             colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
                                             modifier = Modifier.weight(1.3f),
-                                            shape = RoundedCornerShape(12.dp)
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)
                                         ) {
-                                            Text("Trouver un garage", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                            Text("Trouver un garage", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                         }

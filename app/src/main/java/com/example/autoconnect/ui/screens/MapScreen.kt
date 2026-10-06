@@ -665,7 +665,8 @@ fun MapScreen(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Google Maps Navigation intent
                                 Button(
@@ -680,13 +681,14 @@ fun MapScreen(
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A8A)),
                                     shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                                     modifier = Modifier
                                         .weight(1f)
                                         .testTag("provider_directions_button")
                                 ) {
-                                    Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Itinéraire", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(15.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Itinéraire", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
 
                                 // Call phone
@@ -701,6 +703,7 @@ fun MapScreen(
                                             }
                                         },
                                         shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                                         modifier = Modifier.testTag("provider_call_button")
                                     ) {
                                         Icon(Icons.Default.Call, contentDescription = "Appeler", modifier = Modifier.size(16.dp))
@@ -712,13 +715,14 @@ fun MapScreen(
                                     onClick = { onNavigateToDetail(provider) },
                                     colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
                                     shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                                     modifier = Modifier
                                         .weight(1f)
                                         .testTag("provider_details_button")
                                 ) {
-                                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Détails", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(15.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Détails", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }

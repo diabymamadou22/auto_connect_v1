@@ -63,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.data.local.ChatMessageEntity
@@ -358,11 +359,12 @@ fun ChatBubbleItem(
                                 onClick = onAcceptQuote,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
                                 modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Icon(Icons.Default.Event, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Réserver ce Tarif en RDV", fontSize = 11.sp, color = Color.White)
+                                Text("Réserver ce Tarif en RDV", fontSize = 11.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }

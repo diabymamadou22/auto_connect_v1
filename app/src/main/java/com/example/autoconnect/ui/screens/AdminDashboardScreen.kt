@@ -67,6 +67,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -520,11 +521,12 @@ fun AdminDashboardScreen(
                                                     )
                                                 },
                                                 shape = RoundedCornerShape(10.dp),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF059669))
                                             ) {
                                                 Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Capter GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                Text("Capter GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             }
                                         }
 
@@ -629,11 +631,12 @@ fun AdminDashboardScreen(
                                         .fillMaxWidth()
                                         .height(50.dp),
                                     shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A))
                                 ) {
-                                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("CRÉER LE COMPTE PRESTATAIRE", fontWeight = FontWeight.Bold)
+                                    Text("Créer le compte prestataire", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
@@ -727,9 +730,10 @@ fun AdminDashboardScreen(
                                         .fillMaxWidth()
                                         .height(48.dp),
                                     shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A))
                                 ) {
-                                    Text("MODIFIER LE MOT DE PASSE", fontWeight = FontWeight.Bold)
+                                    Text("Modifier le mot de passe", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -744,11 +748,12 @@ fun AdminDashboardScreen(
                                     },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                                 ) {
-                                    Icon(Icons.Default.KeyOff, contentDescription = null, tint = Color.Red)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("SUPPRIMER LE MOT DE PASSE ADMIN", fontWeight = FontWeight.Bold, color = Color.Red)
+                                    Icon(Icons.Default.KeyOff, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Supprimer le mot de passe Admin", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Red, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }

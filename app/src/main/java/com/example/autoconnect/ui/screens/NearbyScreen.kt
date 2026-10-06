@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -35,6 +37,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -53,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.data.model.ServiceProvider
+import com.example.autoconnect.ui.components.NearbyMapComponent
 import com.example.autoconnect.ui.theme.BluePrimary
 import com.example.autoconnect.ui.viewmodel.ServicesViewModel
 
@@ -80,6 +87,8 @@ fun NearbyScreen(
             .sortedBy { it.second }
     }
 
+    var isMapView by remember { mutableStateOf(true) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -87,6 +96,22 @@ fun NearbyScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Retour", tint = Color.White)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { isMapView = true }) {
+                        Icon(
+                            Icons.Default.Map,
+                            contentDescription = "Vue Carte",
+                            tint = if (isMapView) Color.White else Color.White.copy(alpha = 0.55f)
+                        )
+                    }
+                    IconButton(onClick = { isMapView = false }) {
+                        Icon(
+                            Icons.Default.FormatListBulleted,
+                            contentDescription = "Vue Liste",
+                            tint = if (!isMapView) Color.White else Color.White.copy(alpha = 0.55f)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BluePrimary)
@@ -98,8 +123,52 @@ fun NearbyScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Distance & Category Filter Box
-            Card(
+            // Mode Selector Tab Row
+            TabRow(
+                selectedTabIndex = if (isMapView) 0 else 1,
+                containerColor = Color.White,
+                contentColor = BluePrimary,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[if (isMapView) 0 else 1]),
+                        color = BluePrimary
+                    )
+                }
+            ) {
+                Tab(
+                    selected = isMapView,
+                    onClick = { isMapView = true },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Carte Interactive", fontWeight = if (isMapView) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                )
+                Tab(
+                    selected = !isMapView,
+                    onClick = { isMapView = false },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.FormatListBulleted, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Liste par Distance", fontWeight = if (!isMapView) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                )
+            }
+
+            if (isMapView) {
+                NearbyMapComponent(
+                    modifier = Modifier.fillMaxSize(),
+                    services = allServices,
+                    onNavigateToDetail = onNavigateToDetail,
+                    isEmbedded = false
+                )
+            } else {
+                // Distance & Category Filter Box
+                Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -260,4 +329,5 @@ fun NearbyScreen(
             }
         }
     }
+}
 }

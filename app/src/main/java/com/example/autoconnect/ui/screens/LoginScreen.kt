@@ -2,6 +2,7 @@ package com.example.autoconnect.ui.screens
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,11 +47,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -141,22 +144,18 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Logo Box
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .clip(CircleShape)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(BluePrimary, BlueSecondary)
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(96.dp),
+                shape = RoundedCornerShape(22.dp),
+                color = Color.White,
+                shadowElevation = 6.dp
             ) {
-                Icon(
-                    imageVector = Icons.Default.DirectionsCar,
-                    contentDescription = "Logo",
-                    tint = Color.White,
-                    modifier = Modifier.size(48.dp)
+                Image(
+                    painter = painterResource(id = R.drawable.img_app_logo),
+                    contentDescription = "Logo Auto Connect Mali",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(6.dp)
                 )
             }
 
@@ -568,7 +567,7 @@ fun LoginScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         OutlinedButton(
                             onClick = {
@@ -578,10 +577,10 @@ fun LoginScreen(
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 6.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 4.dp),
                             colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
                         ) {
-                            Text("👑 Admin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BluePrimary)
+                            Text("👑 Admin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BluePrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
 
                         OutlinedButton(
@@ -590,12 +589,12 @@ fun LoginScreen(
                                 username = "prestataire"
                                 password = "prestataire"
                             },
-                            modifier = Modifier.weight(1.2f),
+                            modifier = Modifier.weight(1.15f),
                             shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 6.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 4.dp),
                             colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
                         ) {
-                            Text("🔧 Prestataire", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                            Text("🔧 Prestataire", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
 
                         OutlinedButton(
@@ -606,10 +605,10 @@ fun LoginScreen(
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 6.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp, horizontal = 4.dp),
                             colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
                         ) {
-                            Text("🚗 Client", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF15803D))
+                            Text("🚗 Client", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF15803D), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 

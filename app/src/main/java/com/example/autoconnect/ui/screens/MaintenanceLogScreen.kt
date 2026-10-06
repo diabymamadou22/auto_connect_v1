@@ -65,6 +65,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.ui.theme.BluePrimary
@@ -402,7 +403,16 @@ fun MaintenanceLogScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("Estimation Mali: ${task.estimatedCostFcfa}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BluePrimary)
+                                        Text(
+                                            text = "Estimation: ${task.estimatedCostFcfa}",
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = BluePrimary,
+                                            modifier = Modifier.weight(1f, fill = false),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
                                         Button(
                                             onClick = {
                                                 // Log service completed
@@ -414,9 +424,9 @@ fun MaintenanceLogScreen(
                                             },
                                             colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
                                             shape = RoundedCornerShape(10.dp),
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                         ) {
-                                            Text("Valider la révision", fontSize = 11.sp, color = Color.White)
+                                            Text("Valider révision", fontSize = 11.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -551,9 +561,10 @@ fun MaintenanceLogScreen(
                                         Button(
                                             onClick = { onNavigateToCategoryList(symptom.recommendedCategory) },
                                             colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
-                                            shape = RoundedCornerShape(10.dp)
+                                            shape = RoundedCornerShape(10.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                         ) {
-                                            Text("Trouver un spécialiste", fontSize = 11.sp, color = Color.White)
+                                            Text("Trouver un spécialiste", fontSize = 11.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
