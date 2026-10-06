@@ -415,16 +415,21 @@ fun BookingItemCard(
             ) {
                 Surface(
                     color = statusColor.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Text(
                         text = statusLabel,
                         color = statusColor,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Default.Delete, contentDescription = "Supprimer", tint = Color.Gray, modifier = Modifier.size(18.dp))
@@ -437,14 +442,18 @@ fun BookingItemCard(
                 text = booking.providerName,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 16.sp,
-                color = Color(0xFF1E293B)
+                color = Color(0xFF1E293B),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Text(
                 text = booking.serviceType,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
-                color = BluePrimary
+                color = BluePrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -452,7 +461,13 @@ fun BookingItemCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Event, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Date : ${booking.date} (${booking.timeSlot})", fontSize = 12.sp, color = Color(0xFF334155))
+                Text(
+                    text = "Date : ${booking.date} (${booking.timeSlot})",
+                    fontSize = 12.sp,
+                    color = Color(0xFF334155),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -460,7 +475,13 @@ fun BookingItemCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Client : ${booking.clientName} (${booking.clientPhone})", fontSize = 12.sp, color = Color(0xFF334155))
+                Text(
+                    text = "Client : ${booking.clientName} (${booking.clientPhone})",
+                    fontSize = 12.sp,
+                    color = Color(0xFF334155),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             if (booking.notes.isNotBlank()) {

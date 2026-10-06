@@ -179,11 +179,11 @@ fun VehicleHealthReportScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Verified, contentDescription = null, tint = Color(0xFF4ADE80), modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Score Global de Fiabilité", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Score Global de Fiabilité", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text("Certificat d'état général valide", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
-                            Text("AutoConnect Approved", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text("Certificat d'état général valide", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("AutoConnect Approved", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
 
                         Surface(
@@ -255,7 +255,7 @@ fun VehicleHealthReportScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.QrCode, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(28.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Certificat Numérique de Transparence", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Certificat Numérique de Transparence", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))

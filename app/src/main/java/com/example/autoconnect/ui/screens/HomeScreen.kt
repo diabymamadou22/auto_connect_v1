@@ -1,8 +1,11 @@
 package com.example.autoconnect.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,7 +40,9 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Logout
@@ -58,6 +64,7 @@ import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -83,6 +90,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -172,6 +180,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var showFilterSheet by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
+    var showHelpDialog by remember { mutableStateOf(false) }
 
     val cities = remember(allServices) {
         listOf("Toutes") + allServices.map { it.city }.distinct()
@@ -245,7 +254,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Storefront, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Découverte Prestataires (Room)", fontWeight = FontWeight.Bold) },
+                    label = { Text("Tous les Prestataires & Garages", fontWeight = FontWeight.Bold) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -256,7 +265,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Recherche Mécaniciens (Firestore)", fontWeight = FontWeight.Bold) },
+                    label = { Text("Recherche Avancée", fontWeight = FontWeight.Bold) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -267,7 +276,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Map, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Carte & Proximité") },
+                    label = { Text("Carte des Garages GPS") },
                     selected = selectedTab == 1,
                     onClick = {
                         selectedTab = 1
@@ -294,6 +303,17 @@ fun HomeScreen(
                     onClick = {
                         scope.launch { drawerState.close() }
                         onNavigateToEmergency()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.HelpOutline, contentDescription = null, tint = BluePrimary) },
+                    label = { Text("Comment ça marche ? (Aide)") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showHelpDialog = true
                     },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
@@ -362,8 +382,14 @@ fun HomeScreen(
                     },
                     actions = {
                         IconButton(
+                            onClick = { showHelpDialog = true },
+                            modifier = Modifier.testTag("home_guide_top_button")
+                        ) {
+                            Icon(Icons.Default.HelpOutline, contentDescription = "Guide & Aide", tint = Color.White)
+                        }
+                        IconButton(
                             onClick = {
-                                Toast.makeText(context, "Synchronisation Cloud Firestore en cours...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Actualisation des données...", Toast.LENGTH_SHORT).show()
                                 servicesViewModel.syncDataNow { _, msg ->
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }
@@ -379,7 +405,7 @@ fun HomeScreen(
                             } else {
                                 Icon(
                                     imageVector = if (isOnline) Icons.Default.CloudSync else Icons.Default.CloudOff,
-                                    contentDescription = "Synchroniser Cloud Firestore",
+                                    contentDescription = "Actualiser les données",
                                     tint = if (isOnline) Color.White else Color.White.copy(alpha = 0.6f)
                                 )
                             }
@@ -472,7 +498,14 @@ fun HomeScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = "Trouvez les meilleurs mécaniciens & garages au Mali",
+                                        text = "Bonjour${if (!currentUser?.username.isNullOrBlank()) " " + currentUser!!.username.replaceFirstChar { it.uppercase() } else ""} 👋",
+                                        color = Color.White,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Trouvez rapidement un mécanicien ou des pièces au Mali",
                                         color = Color.White.copy(alpha = 0.9f),
                                         fontSize = 13.sp
                                     )
@@ -491,7 +524,7 @@ fun HomeScreen(
                                             OutlinedTextField(
                                                 value = searchQuery,
                                                 onValueChange = { servicesViewModel.setSearchQuery(it) },
-                                                placeholder = { Text("Garage, mécanicien, pièce...", color = Color.Gray, fontSize = 14.sp) },
+                                                placeholder = { Text("Rechercher garage, mécanicien, pièce...", color = Color.Gray, fontSize = 14.sp) },
                                                 singleLine = true,
                                                 colors = OutlinedTextFieldDefaults.colors(
                                                     focusedBorderColor = Color.Transparent,
@@ -508,358 +541,412 @@ fun HomeScreen(
                             }
                         }
 
-                        // 4 Big Action Cards (Grid 2x2)
+                        // Section d'Accueil : Statut discret, 4 Grandes Actions & Guide
                         item {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                // Prominent Service Provider Discovery Banner (Room DB)
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onNavigateToDiscovery() }
-                                        .testTag("home_hero_discovery_card"),
-                                    shape = RoundedCornerShape(18.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E3A8A)),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                                // Petite ligne statut & accès guide
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Surface(
+                                        color = if (isOnline) Color(0xFFECFDF5) else Color(0xFFFEF3C7),
+                                        shape = RoundedCornerShape(20.dp),
+                                        border = BorderStroke(1.dp, if (isOnline) Color(0xFFA7F3D0) else Color(0xFFFDE68A)),
+                                        modifier = Modifier.weight(1f, fill = false)
                                     ) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = Color.White.copy(alpha = 0.2f),
-                                            modifier = Modifier.size(50.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    Icons.Default.Storefront,
-                                                    contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(26.dp)
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(14.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    "Découverte Prestataires",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 16.sp
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                "Mécaniciens locaux & Boutiques de pièces (Base Room)",
-                                                color = Color.White.copy(alpha = 0.85f),
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                        Surface(
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = Color.White
-                                        ) {
-                                            Text(
-                                                text = "DÉCOUVRIR",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.sp,
-                                                color = Color(0xFF1E3A8A),
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                // Direct Cloud Firestore Mechanic Search Card
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onNavigateToMechanicSearch() }
-                                        .testTag("home_hero_mechanic_firestore_card"),
-                                    shape = RoundedCornerShape(18.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0369A1)),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = Color.White.copy(alpha = 0.2f),
-                                            modifier = Modifier.size(50.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    Icons.Default.Build,
-                                                    contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(24.dp)
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(14.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    "Mécaniciens Mali (Cloud)",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 15.sp
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Surface(
-                                                    color = Color(0xFF38BDF8),
-                                                    shape = RoundedCornerShape(6.dp)
-                                                ) {
-                                                    Text(
-                                                        "FIRESTORE",
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Black,
-                                                        color = Color(0xFF0C4A6E),
-                                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                "Recherche en direct avec backend Cloud Firestore",
-                                                color = Color.White.copy(alpha = 0.9f),
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                        Surface(
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = Color.White
-                                        ) {
-                                            Text(
-                                                text = "RECHERCHER",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 10.sp,
-                                                color = Color(0xFF0369A1),
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                // Data Synchronization Service Card (Firestore ↔ Room SQLite)
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("home_sync_status_card"),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (isOnline) Color(0xFF10B981) else Color(0xFFF59E0B))
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = if (isOnline) "🟢 En direct • ${allServices.size} adresses" else "🟠 Mode hors-ligne actif",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = if (isOnline) Color(0xFF065F46) else Color(0xFF92400E),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    TextButton(
+                                        onClick = { showHelpDialog = true },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.HelpOutline,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = BluePrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            "Guide d'utilisation",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = BluePrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Text(
+                                    text = "Que souhaitez-vous faire ?",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E293B)
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // 4 Grandes Actions Principales (2x2)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // 1. Trouver un Garage
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .heightIn(min = 115.dp)
+                                            .clickable { onNavigateToDiscovery() }
+                                            .testTag("home_main_garage_card"),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E40AF)),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(13.dp),
+                                            verticalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.Top
                                             ) {
                                                 Surface(
                                                     shape = CircleShape,
-                                                    color = if (isOnline) Color(0xFFEFF6FF) else Color(0xFFFEF3C7),
-                                                    modifier = Modifier.size(38.dp)
+                                                    color = Color.White.copy(alpha = 0.2f),
+                                                    modifier = Modifier.size(36.dp)
                                                 ) {
                                                     Box(contentAlignment = Alignment.Center) {
-                                                        Icon(
-                                                            imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                                                            contentDescription = null,
-                                                            tint = if (isOnline) BluePrimary else Color(0xFFD97706),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
+                                                        Icon(Icons.Default.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                                     }
                                                 }
-                                                Spacer(modifier = Modifier.width(10.dp))
-                                                Column {
-                                                    Text(
-                                                        text = "Synchro Cloud ↔ Base Room",
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 13.sp,
-                                                        color = Color(0xFF0F172A)
-                                                    )
-                                                    Text(
-                                                        text = if (isOnline) "Cloud Firestore connecté" else "Mode hors-ligne (Room actif)",
-                                                        fontSize = 11.sp,
-                                                        color = if (isOnline) Color(0xFF059669) else Color(0xFFD97706),
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                }
+                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
                                             }
-
-                                            Button(
-                                                onClick = {
-                                                    servicesViewModel.syncDataNow { _, msg ->
-                                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                                    }
-                                                },
-                                                enabled = syncStatus !is SyncStatus.Syncing,
-                                                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
-                                                shape = RoundedCornerShape(20.dp),
-                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                                modifier = Modifier.testTag("home_sync_button")
-                                            ) {
-                                                if (syncStatus is SyncStatus.Syncing) {
-                                                    CircularProgressIndicator(
-                                                        modifier = Modifier.size(14.dp),
-                                                        color = Color.White,
-                                                        strokeWidth = 2.dp
-                                                    )
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    Text("Synchro...", fontSize = 11.sp)
-                                                } else {
-                                                    Icon(
-                                                        Icons.Default.Sync,
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(14.dp),
-                                                        tint = Color.White
-                                                    )
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Text("Actualiser", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Column {
+                                                Text(
+                                                    "Trouver un Garage",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    fontSize = 13.5.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    "Mécanique & révision",
+                                                    color = Color.White.copy(alpha = 0.85f),
+                                                    fontSize = 11.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
                                         }
+                                    }
 
-                                        Spacer(modifier = Modifier.height(10.dp))
-
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = Color(0xFFF8FAFC),
-                                            modifier = Modifier.fillMaxWidth()
+                                    // 2. Trouver des Pièces
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .heightIn(min = 115.dp)
+                                            .clickable { onNavigateToCategoryList(ServiceCategory.PIECES) }
+                                            .testTag("home_main_parts_card"),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0284C7)),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(13.dp),
+                                            verticalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                                modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
+                                                verticalAlignment = Alignment.Top
                                             ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.White.copy(alpha = 0.2f),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(Icons.Default.Storefront, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                                    }
+                                                }
+                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+                                            }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Column {
                                                 Text(
-                                                    text = "💾 ${allServices.size} en cache ($mechanicsCount mécaniciens, $partsShopsCount boutiques)",
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF334155),
-                                                    fontWeight = FontWeight.SemiBold
+                                                    "Pièces Auto",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    fontSize = 13.5.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
-                                                    text = servicesViewModel.getLastSyncFormatted(),
-                                                    fontSize = 10.sp,
-                                                    color = Color(0xFF64748B)
+                                                    "Boutiques certifiées",
+                                                    color = Color.White.copy(alpha = 0.85f),
+                                                    fontSize = 11.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                         }
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Text(
-                                    text = "Actions Rapides",
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1F2937)
-                                )
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    // SOS Emergency
+                                    // 3. Carte Interactive
                                     Card(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(95.dp)
-                                            .clickable { onNavigateToEmergency() },
+                                            .heightIn(min = 115.dp)
+                                            .clickable { onNavigateToMap() }
+                                            .testTag("home_main_map_card"),
                                         shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = EmergencyRed)
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF059669)),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Column(
                                             modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(12.dp),
+                                                .fillMaxWidth()
+                                                .padding(13.dp),
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                            Text("🚨 SOS Urgence", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.Top
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.White.copy(alpha = 0.2f),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(Icons.Default.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                                    }
+                                                }
+                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+                                            }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Column {
+                                                Text(
+                                                    "Carte des Garages",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    fontSize = 13.5.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    "GPS & Ateliers proches",
+                                                    color = Color.White.copy(alpha = 0.85f),
+                                                    fontSize = 11.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
                                         }
                                     }
 
-                                    // Mes RDV & Réservations
+                                    // 4. Urgence Dépannage
                                     Card(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(95.dp)
-                                            .clickable { onNavigateToBookings() },
+                                            .heightIn(min = 115.dp)
+                                            .clickable { onNavigateToEmergency() }
+                                            .testTag("home_main_emergency_card"),
                                         shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = BluePrimary)
+                                        colors = CardDefaults.cardColors(containerColor = EmergencyRed),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                     ) {
                                         Column(
                                             modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(12.dp),
+                                                .fillMaxWidth()
+                                                .padding(13.dp),
                                             verticalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Icon(Icons.Default.Event, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                            Text("📅 Mes Rendez-vous", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.Top
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.White.copy(alpha = 0.2f),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                                    }
+                                                }
+                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+                                            }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Column {
+                                                Text(
+                                                    "🚨 Urgence SOS",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    fontSize = 13.5.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    "Remorquage 24/7",
+                                                    color = Color.White.copy(alpha = 0.85f),
+                                                    fontSize = 11.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
                                         }
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                // Bannière d'Aide & Guide Express
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showHelpDialog = true }
+                                        .testTag("home_guide_banner"),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                                 ) {
-                                    // Localisation & Carte Garages GPS
-                                    Card(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(95.dp)
-                                            .clickable { onNavigateToMap() },
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF059669))
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(12.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = BluePrimary.copy(alpha = 0.12f),
+                                            modifier = Modifier.size(42.dp)
                                         ) {
-                                            Icon(Icons.Default.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                            Text("🗺️ Carte Garages GPS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(22.dp))
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                "Comment ça marche ?",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF0F172A),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                "1. Choisissez un pro • 2. Appelez • 3. Suivez l'entretien",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF475569),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = BluePrimary.copy(alpha = 0.1f)
+                                        ) {
+                                            Text(
+                                                "Guide",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = BluePrimary,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
+                                }
 
-                                    // Garages Proximité
-                                    Card(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(95.dp)
-                                            .clickable { onNavigateToNearby() },
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF7C3AED))
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // Raccourcis pratiques : Mes Rendez-vous & Autour de moi
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = onNavigateToBookings,
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
+                                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                                     ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(12.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                            Text("📍 Autour de moi", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        }
+                                        Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(16.dp), tint = BluePrimary)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "Mes Rendez-vous",
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFF1E293B),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = onNavigateToNearby,
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
+                                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                                    ) {
+                                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF059669))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "Autour de moi",
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFF1E293B),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                 }
                             }
@@ -1075,32 +1162,21 @@ fun HomeScreen(
                                     Icon(Icons.Default.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Carnet d'Entretien", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Rappels de vidange, filtres & suivi révision", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
-                                    }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
-                                }
-                            }
-                        }
-
-                        // Carte Garages GPS
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToMap() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF059669))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("Carte des Garages GPS", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Localisation interactive des garages et ateliers à Bamako", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text(
+                                            "Carnet d'Entretien",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "Rappels de vidange, filtres & suivi révision",
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            fontSize = 12.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
@@ -1123,8 +1199,21 @@ fun HomeScreen(
                                     Icon(Icons.Default.Event, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Mes Rendez-vous Garage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Gérer mes réservations en atelier", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text(
+                                            "Mes Rendez-vous Garage",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "Gérer mes réservations en atelier",
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            fontSize = 12.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
@@ -1147,8 +1236,21 @@ fun HomeScreen(
                                     Icon(Icons.Default.LocalShipping, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Demande de Remorquage 24/7", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Dépannage d'urgence sur route", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text(
+                                            "Demande de Remorquage 24/7",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "Dépannage d'urgence sur route",
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            fontSize = 12.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
@@ -1171,8 +1273,21 @@ fun HomeScreen(
                                     Icon(Icons.Default.Calculate, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Estimations Devis FCFA", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Calculateur de prix moyen des pièces & réparations", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text(
+                                            "Estimations Devis FCFA",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "Calculateur de prix moyen des pièces & réparations",
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            fontSize = 12.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
@@ -1195,8 +1310,21 @@ fun HomeScreen(
                                     Icon(Icons.Default.OfflinePin, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Tutoriels & Guides Hors-Ligne", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Auto-dépannage pas-à-pas accessible sans réseau", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text(
+                                            "Tutoriels & Guides Hors-Ligne",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "Auto-dépannage pas-à-pas accessible sans réseau",
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            fontSize = 12.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
@@ -1219,8 +1347,21 @@ fun HomeScreen(
                                     Icon(Icons.Default.Verified, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Bilan de Santé Auto (PDF & WhatsApp)", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
-                                        Text("Générer un rapport complet partageable", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+                                        Text(
+                                            "Bilan de Santé Auto (PDF & WhatsApp)",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "Générer un rapport complet partageable",
+                                            color = Color.White.copy(alpha = 0.85f),
+                                            fontSize = 12.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
@@ -1342,6 +1483,113 @@ fun HomeScreen(
             }
         }
     }
+
+    // Guide d'utilisation facile
+    if (showHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showHelpDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Lightbulb,
+                        contentDescription = null,
+                        tint = BluePrimary,
+                        modifier = Modifier.size(26.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Guide AutoConnect Mali",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "AutoConnect vous permet de trouver et contacter facilement les meilleurs mécaniciens et vendeurs de pièces à Bamako.",
+                        fontSize = 13.sp,
+                        color = Color(0xFF475569)
+                    )
+
+                    HelpStepItem(
+                        number = "1",
+                        title = "Trouver un garage ou une pièce",
+                        description = "Tapez votre besoin ou quartier dans la recherche, ou cliquez sur « Trouver un Garage » ou « Pièces Auto »."
+                    )
+
+                    HelpStepItem(
+                        number = "2",
+                        title = "Appeler ou s'y rendre",
+                        description = "Sur la fiche d'un garage, touchez « Appeler » pour contacter l'artisan directement ou « Itinéraire » pour lancer le guidage GPS."
+                    )
+
+                    HelpStepItem(
+                        number = "3",
+                        title = "Carte interactive des garages",
+                        description = "L'onglet « Carte » en bas affiche tous les garages et ateliers autour de vous sur un plan Google Maps."
+                    )
+
+                    HelpStepItem(
+                        number = "4",
+                        title = "Urgence & Remorquage 24/7",
+                        description = "En cas de panne sur la route, le bouton rouge « Urgence SOS » vous permet d'appeler immédiatement un dépanneur."
+                    )
+
+                    HelpStepItem(
+                        number = "5",
+                        title = "Suivi de votre véhicule",
+                        description = "Dans l'onglet « Mon Véhicule », notez vos vidanges dans le Carnet d'entretien et estimez le coût de vos pièces en FCFA."
+                    )
+
+                    HelpStepItem(
+                        number = "6",
+                        title = "Mode Hors-ligne garanti",
+                        description = "Même sans connexion Internet, toutes les adresses et numéros enregistrés restent consultables !"
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showHelpDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("J'ai compris", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun HelpStepItem(number: String, title: String, description: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = BluePrimary,
+            modifier = Modifier.size(24.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(text = number, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = description, fontSize = 12.sp, color = Color(0xFF64748B), lineHeight = 16.sp)
+        }
+    }
 }
 
 @Composable
@@ -1352,7 +1600,7 @@ fun CategoryCard(
 ) {
     Card(
         modifier = modifier
-            .height(100.dp)
+            .heightIn(min = 96.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = category.color)
@@ -1376,7 +1624,9 @@ fun CategoryCard(
                 text = category.title,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 15.sp
+                fontSize = 14.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -1426,7 +1676,9 @@ fun FeaturedProviderCard(
                         color = Color.White,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -1445,11 +1697,21 @@ fun FeaturedProviderCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(13.dp))
                         Spacer(modifier = Modifier.width(2.dp))
-                        Text(provider.city, color = Color.Gray, fontSize = 11.sp)
+                        Text(
+                            text = provider.city,
+                            color = Color.Gray,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
+                    Spacer(modifier = Modifier.width(6.dp))
                     Surface(
                         color = BluePrimary.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(6.dp)
@@ -1509,13 +1771,21 @@ fun ListProviderCard(
                     text = provider.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color(0xFF1F2937)
+                    color = Color(0xFF1F2937),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(2.dp))
-                    Text(provider.city, color = Color.Gray, fontSize = 12.sp)
+                    Text(
+                        text = provider.city,
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
                     Spacer(modifier = Modifier.width(12.dp))
 

@@ -244,7 +244,7 @@ fun EmergencyScreen(
                     ) {
                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text("Alerte SOS transmise !", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
                             Text("3 dépanneurs à proximité ont reçu votre position GPS.", fontSize = 12.sp, color = Color(0xFF1B5E20))
                         }
@@ -286,9 +286,10 @@ fun EmergencyScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(contact.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text(contact.phone, color = Color.Gray, fontSize = 12.sp)
+                            Text(contact.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(contact.phone, color = Color.Gray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = contact.color
@@ -358,7 +359,9 @@ fun BreakdownOptionCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
@@ -372,7 +375,10 @@ fun BreakdownOptionCard(
                 text = title,
                 fontSize = 11.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) EmergencyRed else Color.Black
+                color = if (isSelected) EmergencyRed else Color.Black,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

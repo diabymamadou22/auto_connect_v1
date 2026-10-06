@@ -214,13 +214,13 @@ fun ProviderDiscoveryScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Découverte Prestataires",
+                            text = "Garages & Prestataires",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color.White
                         )
                         Text(
-                            text = "Mécaniciens & Boutiques de Pièces (Base Room)",
+                            text = "Mécaniciens qualifiés & Boutiques auto au Mali",
                             fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
@@ -374,17 +374,21 @@ fun ProviderDiscoveryScreen(
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Base Room ↔ Cloud Firestore",
+                                        text = "Annuaire des Garages & Boutiques",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A)
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "${allServices.size} prestataires ($mechanicsCount mécaniciens, $partsShopsCount pièces)",
+                                        text = "${allServices.size} adresses ($mechanicsCount mécaniciens, $partsShopsCount boutiques)",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF64748B)
+                                        color = Color(0xFF64748B),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -408,7 +412,7 @@ fun ProviderDiscoveryScreen(
                                         strokeWidth = 2.dp
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Synchro...", fontSize = 11.sp)
+                                    Text("Synchro...", fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 } else {
                                     Icon(
                                         Icons.Default.Sync,
@@ -417,7 +421,7 @@ fun ProviderDiscoveryScreen(
                                         tint = Color.White
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Actualiser", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("Actualiser", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
@@ -430,15 +434,21 @@ fun ProviderDiscoveryScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isOnline) "🟢 Mode en ligne (Cloud actif)" else "🟠 Mode hors-ligne (accès local Room garanti)",
+                                text = if (isOnline) "🟢 En direct (à jour)" else "🟠 Hors-ligne (enregistré)",
                                 fontSize = 10.sp,
                                 color = if (isOnline) Color(0xFF059669) else Color(0xFFD97706),
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Synchro : ${servicesViewModel.getLastSyncFormatted()}",
+                                text = "Actualisé : ${servicesViewModel.getLastSyncFormatted()}",
                                 fontSize = 10.sp,
-                                color = Color(0xFF94A3B8)
+                                color = Color(0xFF94A3B8),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -840,6 +850,7 @@ fun ProviderDiscoveryScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DiscoveryProviderCard(
     provider: ServiceProvider,
@@ -884,7 +895,8 @@ fun DiscoveryProviderCard(
             ) {
                 Surface(
                     color = categoryColor.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -901,10 +913,14 @@ fun DiscoveryProviderCard(
                             text = categoryBadgeText,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = categoryColor
+                            color = categoryColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
@@ -921,7 +937,9 @@ fun DiscoveryProviderCard(
                                 text = distanceKm,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF475569)
+                                color = Color(0xFF475569),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -963,9 +981,13 @@ fun DiscoveryProviderCard(
                     Text(
                         text = "${provider.city} • ${provider.phone}",
                         fontSize = 12.sp,
-                        color = Color(0xFF64748B)
+                        color = Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Surface(
                     color = if (provider.isOpen) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
@@ -1009,9 +1031,10 @@ fun DiscoveryProviderCard(
                 val tags = remember(provider.servicesOffered) {
                     provider.servicesOffered.split(",", ";").map { it.trim() }.filter { it.isNotBlank() }.take(4)
                 }
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     tags.forEach { tag ->
                         Surface(
@@ -1023,7 +1046,9 @@ fun DiscoveryProviderCard(
                                 text = tag,
                                 fontSize = 10.sp,
                                 color = Color(0xFF475569),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

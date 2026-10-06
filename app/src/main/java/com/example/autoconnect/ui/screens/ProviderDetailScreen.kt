@@ -211,7 +211,9 @@ fun ProviderDetailScreen(
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 20.sp,
                                 color = Color(0xFF1F2937),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Surface(
                                 color = if (provider.isOpen) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
@@ -252,7 +254,7 @@ fun ProviderDetailScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(2.dp))
-                            Text(provider.city, color = Color.Gray, fontSize = 14.sp)
+                            Text(provider.city, color = Color.Gray, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -428,7 +430,9 @@ fun ProviderDetailScreen(
                                                         text = service.title,
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 15.sp,
-                                                        color = Color(0xFF0F172A)
+                                                        color = Color(0xFF0F172A),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -453,11 +457,13 @@ fun ProviderDetailScreen(
                                                     }
                                                 }
 
+                                                Spacer(modifier = Modifier.width(8.dp))
                                                 Text(
                                                     text = "${formatter.format(service.priceCfa)} F",
                                                     fontWeight = FontWeight.ExtraBold,
                                                     fontSize = 15.sp,
-                                                    color = Color(0xFF059669)
+                                                    color = Color(0xFF059669),
+                                                    maxLines = 1
                                                 )
                                             }
 

@@ -147,8 +147,8 @@ fun TowingRequestScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Service d'Urgence Remorquage Bamako", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Assistance plateau & dépanneuse géolocalisée 24h/24", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+                            Text("Service d'Urgence Remorquage Bamako", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("Assistance plateau & dépanneuse géolocalisée 24h/24", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -316,7 +316,7 @@ fun TowingRequestScreen(
                                 3 -> {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(48.dp))
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("DÉPANNEUSE EN ROUTE EN EXCLUSIVITÉ", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF2E7D32))
+                                    Text("DÉPANNEUSE EN ROUTE EN EXCLUSIVITÉ", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF2E7D32), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text("Arrivée estimée : 12 - 15 minutes", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = EmergencyRed)
                                     Spacer(modifier = Modifier.height(16.dp))
@@ -398,8 +398,8 @@ fun TowingRequestScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Standard Téléphonique Dépannage Mali", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("+223 80 00 22 44 (Appel Direct Gratuit)", fontSize = 11.sp, color = Color.Gray)
+                            Text("Standard Téléphonique Dépannage Mali", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("+223 80 00 22 44 (Appel Direct Gratuit)", fontSize = 11.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                         IconButton(
                             onClick = {

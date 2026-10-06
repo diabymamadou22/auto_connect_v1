@@ -432,14 +432,17 @@ fun CostEstimatorScreen(
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(tip.iconEmoji, fontSize = 22.sp)
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(tip.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1F2937))
-                                        }
+                                        Text(tip.iconEmoji, fontSize = 22.sp)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = tip.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF1F2937),
+                                            modifier = Modifier.weight(1f)
+                                        )
                                     }
 
                                     Spacer(modifier = Modifier.height(6.dp))

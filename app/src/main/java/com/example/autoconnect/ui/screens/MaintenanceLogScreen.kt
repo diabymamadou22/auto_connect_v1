@@ -350,7 +350,16 @@ fun MaintenanceLogScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(task.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1F2937))
+                                        Text(
+                                            text = task.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF1F2937),
+                                            modifier = Modifier.weight(1f, fill = false),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
                                         Surface(
                                             color = statusColor.copy(alpha = 0.12f),
                                             shape = RoundedCornerShape(12.dp)
@@ -490,12 +499,13 @@ fun MaintenanceLogScreen(
                                     Spacer(modifier = Modifier.width(12.dp))
 
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(record.serviceName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("${record.garageName} • ${record.date}", color = Color.Gray, fontSize = 12.sp)
-                                        Text("Kilométrage: ${record.mileageKm} km", color = BluePrimary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(record.serviceName, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text("${record.garageName} • ${record.date}", color = Color.Gray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text("Kilométrage: ${record.mileageKm} km", color = BluePrimary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
 
-                                    Text(record.costFcfa, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(record.costFcfa, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = Color(0xFF2E7D32), maxLines = 1)
                                 }
                             }
                         }

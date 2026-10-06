@@ -523,7 +523,9 @@ fun MaliMechanicCard(
                         Text(
                             text = "${mechanic.city} • $distanceKm",
                             fontSize = 12.sp,
-                            color = Color(0xFF475569)
+                            color = Color(0xFF475569),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -588,7 +590,9 @@ fun MaliMechanicCard(
                     Text(
                         text = hours,
                         fontSize = 11.sp,
-                        color = Color(0xFF64748B)
+                        color = Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -611,7 +615,9 @@ fun MaliMechanicCard(
                                 fontSize = 10.sp,
                                 color = BluePrimary,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -631,7 +637,8 @@ fun MaliMechanicCard(
             // Action Buttons Row: Call, Chat, Appointment, Map
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Call
                 Button(
@@ -639,11 +646,11 @@ fun MaliMechanicCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                 ) {
-                    Icon(Icons.Default.Call, contentDescription = "Appeler", modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Appel", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Call, contentDescription = "Appeler", modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("Appel", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 // Chat
@@ -653,11 +660,11 @@ fun MaliMechanicCard(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
                     border = androidx.compose.foundation.BorderStroke(1.dp, BluePrimary),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Message", tint = BluePrimary, modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Chat", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = BluePrimary)
+                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Message", tint = BluePrimary, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("Chat", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BluePrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 // Book Appointment
@@ -666,18 +673,18 @@ fun MaliMechanicCard(
                     modifier = Modifier.weight(1.1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                 ) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = "RDV", modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("RDV", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.CalendarMonth, contentDescription = "RDV", modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("RDV", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 // GPS Map
                 IconButton(
                     onClick = onItineraryClick,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xFFF1F5F9))
                 ) {

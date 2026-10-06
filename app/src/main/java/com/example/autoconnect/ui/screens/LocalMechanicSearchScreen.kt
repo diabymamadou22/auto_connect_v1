@@ -40,13 +40,13 @@ fun LocalMechanicSearchScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Recherche Mécaniciens",
+                            text = "Recherche Spécialisée",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color.White
                         )
                         Text(
-                            text = "Cloud Firestore • Ateliers & Garages Mali",
+                            text = "Trouvez un mécanicien ou atelier qualifié au Mali",
                             fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )

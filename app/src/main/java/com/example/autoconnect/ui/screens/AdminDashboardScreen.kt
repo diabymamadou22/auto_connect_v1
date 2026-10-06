@@ -196,18 +196,22 @@ fun AdminDashboardScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Espace Contrôle & Sécurité Admin",
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                fontSize = 17.sp
+                                fontSize = 17.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "Compte Administrateur Sécurisé (•••••)",
                                 color = Color(0xFFE1BEE7),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -280,8 +284,8 @@ fun AdminDashboardScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(provider.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                        Text("${provider.category.title} • ${provider.city} • ${provider.phone}", color = Color.Gray, fontSize = 12.sp)
+                                        Text(provider.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text("${provider.category.title} • ${provider.city} • ${provider.phone}", color = Color.Gray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                     IconButton(
                                         onClick = {
@@ -779,9 +783,9 @@ fun AdminStatCard(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
+            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(label, fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f))
+            Text(label, fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

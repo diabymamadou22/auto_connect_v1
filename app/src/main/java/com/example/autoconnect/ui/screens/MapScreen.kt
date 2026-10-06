@@ -297,6 +297,10 @@ fun MapScreen(
             AndroidView(
                 factory = { ctx ->
                     WebView(ctx).apply {
+                        // Prevent Mesa driver from failing to query GPU rendernodes in containerized / headless emulators
+                        try {
+                            setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+                        } catch (_: Throwable) {}
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.loadWithOverviewMode = true
@@ -346,7 +350,13 @@ fun MapScreen(
                 },
                 modifier = Modifier
                     .fillMaxSize()
-                    .testTag("google_maps_webview")
+                    .testTag("google_maps_webview"),
+                onRelease = { webView ->
+                    try {
+                        webView.stopLoading()
+                        webView.destroy()
+                    } catch (_: Throwable) {}
+                }
             )
 
             // Top Overlay: Category Filter Chips & Info Pill
