@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,11 +15,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
@@ -167,161 +170,185 @@ fun NearbyScreen(
                     isEmbedded = false
                 )
             } else {
-                // Distance & Category Filter Box
-                Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.MyLocation, contentDescription = null, tint = BluePrimary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Rayon de recherche: ${maxDistanceKm.toInt()} km",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = Color(0xFF1F2937)
-                        )
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val isTablet = maxWidth >= 600.dp
+                    val listModifier = if (isTablet) {
+                        Modifier
+                            .widthIn(max = 760.dp)
+                            .align(Alignment.TopCenter)
+                    } else {
+                        Modifier.fillMaxWidth()
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Slider(
-                        value = maxDistanceKm,
-                        onValueChange = { maxDistanceKm = it },
-                        valueRange = 5f..200f,
-                        steps = 38,
-                        colors = SliderDefaults.colors(
-                            thumbColor = BluePrimary,
-                            activeTrackColor = BluePrimary
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = listModifier.fillMaxSize()
                     ) {
-                        item {
-                            FilterChip(
-                                selected = selectedCategoryFilter == null,
-                                onClick = { selectedCategoryFilter = null },
-                                label = { Text("Tous les services") }
-                            )
-                        }
-                        item {
-                            FilterChip(
-                                selected = selectedCategoryFilter == ServiceCategory.MECANICIEN,
-                                onClick = { selectedCategoryFilter = ServiceCategory.MECANICIEN },
-                                label = { Text("🛠️ Mécaniciens") },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFFFF9800), selectedLabelColor = Color.White)
-                            )
-                        }
-                        item {
-                            FilterChip(
-                                selected = selectedCategoryFilter == ServiceCategory.PNEUMATIQUE,
-                                onClick = { selectedCategoryFilter = ServiceCategory.PNEUMATIQUE },
-                                label = { Text("🛞 Pneumatique") }
-                            )
-                        }
-                        item {
-                            FilterChip(
-                                selected = selectedCategoryFilter == ServiceCategory.PIECES,
-                                onClick = { selectedCategoryFilter = ServiceCategory.PIECES },
-                                label = { Text("🚗 Pièces Auto") }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (nearbyProviders.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Aucun prestataire trouvé dans ce rayon.", color = Color.Gray, fontSize = 14.sp)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    items(nearbyProviders, key = { it.first.id }) { (provider, distanceKm) ->
+                        // Distance & Category Filter Box
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 10.dp)
-                                .clickable { onNavigateToDetail(provider) },
-                            shape = RoundedCornerShape(14.dp),
+                                .padding(16.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = provider.category.color.copy(alpha = 0.15f),
-                                    modifier = Modifier.size(42.dp)
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(provider.category.icon, contentDescription = null, tint = provider.category.color, modifier = Modifier.size(22.dp))
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
+                                    Icon(Icons.Default.MyLocation, contentDescription = null, tint = BluePrimary)
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = provider.name,
+                                        text = "Rayon de recherche: ${maxDistanceKm.toInt()} km",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
                                         color = Color(0xFF1F2937)
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = "${provider.category.title} • ${provider.city}",
-                                            fontSize = 12.sp,
-                                            color = Color.Gray
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Slider(
+                                    value = maxDistanceKm,
+                                    onValueChange = { maxDistanceKm = it },
+                                    valueRange = 5f..200f,
+                                    steps = 38,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = BluePrimary,
+                                        activeTrackColor = BluePrimary
+                                    )
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    item {
+                                        FilterChip(
+                                            selected = selectedCategoryFilter == null,
+                                            onClick = { selectedCategoryFilter = null },
+                                            label = { Text("Tous les services") }
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(12.dp))
-                                        Text(provider.rating.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    item {
+                                        FilterChip(
+                                            selected = selectedCategoryFilter == ServiceCategory.MECANICIEN,
+                                            onClick = { selectedCategoryFilter = ServiceCategory.MECANICIEN },
+                                            label = { Text("🛠️ Mécaniciens") },
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFFFF9800), selectedLabelColor = Color.White)
+                                        )
+                                    }
+                                    item {
+                                        FilterChip(
+                                            selected = selectedCategoryFilter == ServiceCategory.PNEUMATIQUE,
+                                            onClick = { selectedCategoryFilter = ServiceCategory.PNEUMATIQUE },
+                                            label = { Text("🛞 Pneumatique") }
+                                        )
+                                    }
+                                    item {
+                                        FilterChip(
+                                            selected = selectedCategoryFilter == ServiceCategory.PIECES,
+                                            onClick = { selectedCategoryFilter = ServiceCategory.PIECES },
+                                            label = { Text("🚗 Pièces Auto") }
+                                        )
                                     }
                                 }
+                            }
+                        }
 
-                                Spacer(modifier = Modifier.width(8.dp))
+                        if (nearbyProviders.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Aucun prestataire trouvé dans ce rayon.", color = Color.Gray, fontSize = 14.sp)
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                items(nearbyProviders, key = { it.first.id }) { (provider, distanceKm) ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 10.dp)
+                                            .clickable { onNavigateToDetail(provider) },
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = provider.category.color.copy(alpha = 0.15f),
+                                                modifier = Modifier.size(42.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(provider.category.icon, contentDescription = null, tint = provider.category.color, modifier = Modifier.size(22.dp))
+                                                }
+                                            }
 
-                                Box(
-                                    modifier = Modifier
-                                        .background(BluePrimary.copy(alpha = 0.1f), shape = RoundedCornerShape(20.dp))
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = String.format("%.1f km", distanceKm),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        color = BluePrimary
-                                    )
+                                            Spacer(modifier = Modifier.width(12.dp))
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = provider.name,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 15.sp,
+                                                    color = Color(0xFF1F2937),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(
+                                                        text = "${provider.category.title} • ${provider.city}",
+                                                        fontSize = 12.sp,
+                                                        color = Color.Gray,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.weight(1f, fill = false)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(12.dp))
+                                                    Spacer(modifier = Modifier.width(2.dp))
+                                                    Text(provider.rating.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.width(8.dp))
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(BluePrimary.copy(alpha = 0.1f), shape = RoundedCornerShape(20.dp))
+                                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = String.format("%.1f km", distanceKm),
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp,
+                                                    color = BluePrimary
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.width(4.dp))
+
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+                                        }
+                                    }
                                 }
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
                             }
                         }
                     }
@@ -329,5 +356,4 @@ fun NearbyScreen(
             }
         }
     }
-}
 }

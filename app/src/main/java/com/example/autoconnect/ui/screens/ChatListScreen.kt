@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -107,14 +109,26 @@ fun ChatListScreen(
             }
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(Color(0xFFF8FAFC))
         ) {
-            // Quick Mechanics Bar
-            Column(modifier = Modifier.padding(16.dp)) {
+            val isTablet = maxWidth >= 600.dp
+            val contentModifier = if (isTablet) {
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = contentModifier.fillMaxSize()
+            ) {
+                // Quick Mechanics Bar
+                Column(modifier = Modifier.padding(16.dp)) {
                 Text("Démarrer un chat avec un garage :", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF334155))
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,6 +286,7 @@ fun ChatListScreen(
                 }
             }
         }
+    }
 
         if (showNewChatDialog) {
             AlertDialog(

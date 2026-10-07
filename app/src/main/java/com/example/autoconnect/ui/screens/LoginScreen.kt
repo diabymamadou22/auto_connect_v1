@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -134,51 +135,59 @@ fun LoginScreen(
                 .background(Color(0xFFE0E7FF).copy(alpha = 0.6f))
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            val isSmallScreen = maxWidth < 380.dp || maxHeight < 700.dp
+            val horizontalPadding = if (isSmallScreen) 16.dp else 28.dp
+            val logoSize = if (isSmallScreen) 80.dp else 96.dp
+            val titleSize = if (isSmallScreen) 26.sp else 32.sp
 
-            // Logo Box
-            Surface(
-                modifier = Modifier.size(96.dp),
-                shape = RoundedCornerShape(22.dp),
-                color = Color.White,
-                shadowElevation = 6.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = horizontalPadding, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_app_logo),
-                    contentDescription = "Logo Auto Connect Mali",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(6.dp)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Logo Box
+                Surface(
+                    modifier = Modifier.size(logoSize),
+                    shape = RoundedCornerShape(22.dp),
+                    color = Color.White,
+                    shadowElevation = 6.dp
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.img_app_logo),
+                        contentDescription = "Logo Auto Connect Mali",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(6.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "AUTO CONNECT",
+                    fontSize = titleSize,
+                    fontWeight = FontWeight.Black,
+                    color = Color(0xFF0F172A),
+                    letterSpacing = 2.sp
                 )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Services & Dépannage Auto",
+                    color = Color(0xFF64748B),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
 
-            Text(
-                text = "AUTO CONNECT",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFF0F172A),
-                letterSpacing = 2.sp
-            )
-
-            Text(
-                text = "Services & Dépannage Auto",
-                color = Color(0xFF64748B),
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
             // Polished White Card
             Card(
@@ -494,37 +503,11 @@ fun LoginScreen(
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Guest / Fast discovery access
-                    OutlinedButton(
-                        onClick = {
-                            authViewModel.loginAsGuest()
-                            Toast.makeText(context, "Connecté en mode invité !", Toast.LENGTH_SHORT).show()
-                            onLoginSuccess()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .testTag("guest_login_button"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFFF8FAFC)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
-                    ) {
-                        Text(
-                            text = "Explorer en tant qu'invité (Sans compte)",
-                            color = Color(0xFF475569),
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp
-                        )
-                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -174,14 +176,27 @@ fun AddServiceScreen(
                 }
             }
         } else {
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                val isTablet = maxWidth >= 600.dp
+                val contentModifier = if (isTablet) {
+                    Modifier
+                        .widthIn(max = 680.dp)
+                        .align(Alignment.TopCenter)
+                } else {
+                    Modifier.fillMaxWidth()
+                }
+
+                Column(
+                    modifier = contentModifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                 // Info Banner
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -367,4 +382,5 @@ fun AddServiceScreen(
             }
         }
     }
+}
 }

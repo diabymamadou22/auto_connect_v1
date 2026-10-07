@@ -1160,6 +1160,7 @@ fun HomeScreen(
             }
         }
     }
+}
 
     // Filter Sheet Modal
     if (showFilterSheet) {

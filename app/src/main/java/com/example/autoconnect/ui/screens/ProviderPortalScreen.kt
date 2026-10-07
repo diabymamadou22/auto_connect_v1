@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -183,15 +185,27 @@ fun ProviderPortalScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(Color(0xFFF8FAFC))
         ) {
-            if (!isProUser) {
-                ProAccessRestrictedCard(onLoginClick = onBack)
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 820.dp)
+                    .align(Alignment.TopCenter)
             } else {
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = contentModifier.fillMaxSize()
+            ) {
+                if (!isProUser) {
+                    ProAccessRestrictedCard(onLoginClick = onBack)
+                } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
@@ -557,6 +571,7 @@ fun ProviderPortalScreen(
             }
         }
     }
+}
 
     // Modal Bottom Sheet: Prestataire creates/edits a service (OfferedService)
     if (showCreateServiceSheet) {

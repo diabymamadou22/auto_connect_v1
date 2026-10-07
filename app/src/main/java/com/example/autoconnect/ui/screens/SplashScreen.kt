@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -90,7 +91,7 @@ fun SplashScreen(
         onSplashFinished()
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -102,20 +103,20 @@ fun SplashScreen(
                     )
                 )
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
-                // Allows user to tap to skip immediately if desired
-                onSplashFinished()
-            }
             .testTag("splash_screen_container"),
         contentAlignment = Alignment.Center
     ) {
+        val isCompactHeight = maxHeight < 640.dp
+        val logoBoxSize = if (isCompactHeight) 140.dp else 200.dp
+        val haloSize = if (isCompactHeight) 170.dp else 230.dp
+        val bottomPadding = if (isCompactHeight) 16.dp else 36.dp
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
         ) {
             // Main Logo with gentle scale and drop shadow
             Box(
@@ -127,7 +128,7 @@ fun SplashScreen(
                 // Background soft halo
                 Box(
                     modifier = Modifier
-                        .size(240.dp)
+                        .size(haloSize)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
@@ -140,10 +141,10 @@ fun SplashScreen(
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(24.dp),
                     color = Color.White,
-                    shadowElevation = 10.dp,
-                    modifier = Modifier.size(210.dp)
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.size(logoBoxSize)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.img_app_logo),
@@ -156,7 +157,7 @@ fun SplashScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(if (isCompactHeight) 16.dp else 28.dp))
 
             // App Name & Slogan with Fade-in
             Column(
@@ -165,47 +166,48 @@ fun SplashScreen(
             ) {
                 Text(
                     text = "AUTO CONNECT MALI",
-                    fontSize = 22.sp,
+                    fontSize = if (isCompactHeight) 19.sp else 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF0F172A),
-                    letterSpacing = 1.2.sp
+                    letterSpacing = 1.2.sp,
+                    textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = "Votre assistant auto nouvelle génération",
-                    fontSize = 13.5.sp,
+                    fontSize = if (isCompactHeight) 12.sp else 13.5.sp,
                     color = Color(0xFF475569),
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Mali National Flag Accent Bar (Vert, Jaune, Rouge)
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .height(5.dp)
-                        .width(72.dp)
+                        .height(4.dp)
+                        .width(68.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(5.dp)
+                            .height(4.dp)
                             .background(Color(0xFF14B8A6)) // Green
                     )
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(5.dp)
+                            .height(4.dp)
                             .background(Color(0xFFEAB308)) // Yellow / Gold
                     )
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(5.dp)
+                            .height(4.dp)
                             .background(Color(0xFFEF4444)) // Red
                     )
                 }
@@ -216,19 +218,19 @@ fun SplashScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 40.dp)
+                .padding(bottom = bottomPadding)
                 .alpha(alpha.value),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(22.dp),
                 color = BluePrimary,
                 strokeWidth = 2.5.dp
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Chargement en cours...",
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
                 color = Color(0xFF94A3B8),
                 fontWeight = FontWeight.Medium
             )

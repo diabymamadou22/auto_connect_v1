@@ -1,11 +1,13 @@
 package com.example.autoconnect.ui.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -66,32 +68,45 @@ fun ProviderListScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (categoryServices.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Aucun prestataire dans cette catégorie.", color = Color.Gray, fontSize = 14.sp)
-                }
+            val isTablet = maxWidth >= 600.dp
+            val listModifier = if (isTablet) {
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.TopCenter)
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp)
-                ) {
-                    items(categoryServices, key = { it.id }) { provider ->
-                        Box(modifier = Modifier.padding(bottom = 8.dp)) {
-                            ListProviderCard(
-                                provider = provider,
-                                onClick = { onNavigateToDetail(provider) },
-                                onNavigateToMap = onNavigateToMap
-                            )
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = listModifier.fillMaxSize()
+            ) {
+                if (categoryServices.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Aucun prestataire dans cette catégorie.", color = Color.Gray, fontSize = 14.sp)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        items(categoryServices, key = { it.id }) { provider ->
+                            Box(modifier = Modifier.padding(bottom = 8.dp)) {
+                                ListProviderCard(
+                                    provider = provider,
+                                    onClick = { onNavigateToDetail(provider) },
+                                    onNavigateToMap = onNavigateToMap
+                                )
+                            }
                         }
                     }
                 }

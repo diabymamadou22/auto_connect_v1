@@ -224,6 +224,7 @@ fun TutorialsScreen(
         }
     }
 }
+}
 
 @Composable
 fun TutorialCard(

@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -363,6 +364,7 @@ fun MapScreen(
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .widthIn(max = 640.dp)
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
@@ -550,6 +552,7 @@ fun MapScreen(
                 exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .widthIn(max = 540.dp)
                     .padding(16.dp)
             ) {
                 selectedProvider?.let { provider ->
@@ -588,7 +591,9 @@ fun MapScreen(
                                         text = provider.name,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
-                                        color = Color(0xFF0F172A)
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Surface(
