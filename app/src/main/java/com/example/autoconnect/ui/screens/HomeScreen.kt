@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -254,7 +256,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Storefront, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Tous les Prestataires & Garages", fontWeight = FontWeight.Bold) },
+                    label = { Text("Annuaire", fontWeight = FontWeight.Bold) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -265,7 +267,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Build, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Recherche Avancée", fontWeight = FontWeight.Bold) },
+                    label = { Text("Recherche", fontWeight = FontWeight.Bold) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -276,7 +278,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Map, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Carte des Garages GPS") },
+                    label = { Text("Carte GPS") },
                     selected = selectedTab == 1,
                     onClick = {
                         selectedTab = 1
@@ -287,7 +289,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Mon Véhicule (Carnet & Diagnostic)") },
+                    label = { Text("Mon Véhicule") },
                     selected = selectedTab == 2,
                     onClick = {
                         selectedTab = 2
@@ -298,7 +300,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Bolt, contentDescription = null, tint = EmergencyRed) },
-                    label = { Text("Urgence SOS 24/7", fontWeight = FontWeight.Bold, color = EmergencyRed) },
+                    label = { Text("Urgence SOS", fontWeight = FontWeight.Bold, color = EmergencyRed) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -309,7 +311,7 @@ fun HomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.HelpOutline, contentDescription = null, tint = BluePrimary) },
-                    label = { Text("Comment ça marche ? (Aide)") },
+                    label = { Text("Aide") },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -479,15 +481,27 @@ fun HomeScreen(
                 }
             }
         ) { innerPadding ->
-            when (selectedTab) {
-                0 -> {
-                    // TAB 0: ACCUEIL & RECHERCHE
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        contentPadding = PaddingValues(bottom = 20.dp)
-                    ) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                val isTablet = maxWidth >= 600.dp
+                val contentModifier = if (isTablet) {
+                    Modifier
+                        .widthIn(max = 840.dp)
+                        .align(Alignment.TopCenter)
+                } else {
+                    Modifier.fillMaxWidth()
+                }
+
+                when (selectedTab) {
+                    0 -> {
+                        // TAB 0: ACCUEIL & RECHERCHE
+                        LazyColumn(
+                            modifier = contentModifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 20.dp)
+                        ) {
                         // Search Header Section
                         item {
                             Box(
@@ -500,16 +514,10 @@ fun HomeScreen(
                                     Text(
                                         text = "Bonjour${if (!currentUser?.username.isNullOrBlank()) " " + currentUser!!.username.replaceFirstChar { it.uppercase() } else ""} 👋",
                                         color = Color.White,
-                                        fontSize = 18.sp,
+                                        fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "Trouvez rapidement un mécanicien ou des pièces au Mali",
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        fontSize = 13.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Spacer(modifier = Modifier.height(10.dp))
                                     Surface(
                                         shape = RoundedCornerShape(14.dp),
                                         color = Color.White,
@@ -524,7 +532,7 @@ fun HomeScreen(
                                             OutlinedTextField(
                                                 value = searchQuery,
                                                 onValueChange = { servicesViewModel.setSearchQuery(it) },
-                                                placeholder = { Text("Rechercher garage, mécanicien, pièce...", color = Color.Gray, fontSize = 14.sp) },
+                                                placeholder = { Text("Rechercher...", color = Color.Gray, fontSize = 14.sp) },
                                                 singleLine = true,
                                                 colors = OutlinedTextFieldDefaults.colors(
                                                     focusedBorderColor = Color.Transparent,
@@ -541,412 +549,34 @@ fun HomeScreen(
                             }
                         }
 
-                        // Section d'Accueil : Statut discret, 4 Grandes Actions & Guide
+                        // Section d'Accueil : 4 Grandes Actions
                         item {
                             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
-                                // Petite ligne statut & accès guide
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        color = if (isOnline) Color(0xFFECFDF5) else Color(0xFFFEF3C7),
-                                        shape = RoundedCornerShape(20.dp),
-                                        border = BorderStroke(1.dp, if (isOnline) Color(0xFFA7F3D0) else Color(0xFFFDE68A)),
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(8.dp)
-                                                    .clip(CircleShape)
-                                                    .background(if (isOnline) Color(0xFF10B981) else Color(0xFFF59E0B))
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = if (isOnline) "🟢 En direct • ${allServices.size} adresses" else "🟠 Mode hors-ligne actif",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = if (isOnline) Color(0xFF065F46) else Color(0xFF92400E),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    TextButton(
-                                        onClick = { showHelpDialog = true },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.HelpOutline,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = BluePrimary
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            "Guide d'utilisation",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = BluePrimary,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                Text(
-                                    text = "Que souhaitez-vous faire ?",
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                // 4 Grandes Actions Principales (2x2)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    // 1. Trouver un Garage
-                                    Card(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .heightIn(min = 115.dp)
-                                            .clickable { onNavigateToDiscovery() }
-                                            .testTag("home_main_garage_card"),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E40AF)),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(13.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.Top
-                                            ) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = Color.White.copy(alpha = 0.2f),
-                                                    modifier = Modifier.size(36.dp)
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center) {
-                                                        Icon(Icons.Default.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                                    }
-                                                }
-                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
-                                            }
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                            Column {
-                                                Text(
-                                                    "Trouver un Garage",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 13.5.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    "Mécanique & révision",
-                                                    color = Color.White.copy(alpha = 0.85f),
-                                                    fontSize = 11.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // 2. Trouver des Pièces
-                                    Card(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .heightIn(min = 115.dp)
-                                            .clickable { onNavigateToCategoryList(ServiceCategory.PIECES) }
-                                            .testTag("home_main_parts_card"),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0284C7)),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(13.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.Top
-                                            ) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = Color.White.copy(alpha = 0.2f),
-                                                    modifier = Modifier.size(36.dp)
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center) {
-                                                        Icon(Icons.Default.Storefront, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                                    }
-                                                }
-                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
-                                            }
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                            Column {
-                                                Text(
-                                                    "Pièces Auto",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 13.5.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    "Boutiques certifiées",
-                                                    color = Color.White.copy(alpha = 0.85f),
-                                                    fontSize = 11.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    // 3. Carte Interactive
-                                    Card(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .heightIn(min = 115.dp)
-                                            .clickable { onNavigateToMap() }
-                                            .testTag("home_main_map_card"),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF059669)),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(13.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.Top
-                                            ) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = Color.White.copy(alpha = 0.2f),
-                                                    modifier = Modifier.size(36.dp)
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center) {
-                                                        Icon(Icons.Default.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                                    }
-                                                }
-                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
-                                            }
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                            Column {
-                                                Text(
-                                                    "Carte des Garages",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 13.5.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    "GPS & Ateliers proches",
-                                                    color = Color.White.copy(alpha = 0.85f),
-                                                    fontSize = 11.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // 4. Urgence Dépannage
-                                    Card(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .heightIn(min = 115.dp)
-                                            .clickable { onNavigateToEmergency() }
-                                            .testTag("home_main_emergency_card"),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = EmergencyRed),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(13.dp),
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.Top
-                                            ) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = Color.White.copy(alpha = 0.2f),
-                                                    modifier = Modifier.size(36.dp)
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center) {
-                                                        Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                                    }
-                                                }
-                                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
-                                            }
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                            Column {
-                                                Text(
-                                                    "🚨 Urgence SOS",
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    fontSize = 13.5.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    "Remorquage 24/7",
-                                                    color = Color.White.copy(alpha = 0.85f),
-                                                    fontSize = 11.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Bannière d'Aide & Guide Express
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { showHelpDialog = true }
-                                        .testTag("home_guide_banner"),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
-                                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
-                                ) {
+                                if (isTablet) {
                                     Row(
-                                        modifier = Modifier.padding(14.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = BluePrimary.copy(alpha = 0.12f),
-                                            modifier = Modifier.size(42.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(22.dp))
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                "Comment ça marche ?",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp,
-                                                color = Color(0xFF0F172A),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                "1. Choisissez un pro • 2. Appelez • 3. Suivez l'entretien",
-                                                fontSize = 11.sp,
-                                                color = Color(0xFF475569),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Surface(
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = BluePrimary.copy(alpha = 0.1f)
-                                        ) {
-                                            Text(
-                                                "Guide",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = BluePrimary,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
+                                        MainActionCard(title = "Garages", icon = Icons.Default.Build, color = Color(0xFF1E40AF), testTag = "home_main_garage_card", onClick = onNavigateToDiscovery, modifier = Modifier.weight(1f))
+                                        MainActionCard(title = "Pièces Auto", icon = Icons.Default.Storefront, color = Color(0xFF0284C7), testTag = "home_main_parts_card", onClick = { onNavigateToCategoryList(ServiceCategory.PIECES) }, modifier = Modifier.weight(1f))
+                                        MainActionCard(title = "Carte GPS", icon = Icons.Default.Map, color = Color(0xFF059669), testTag = "home_main_map_card", onClick = onNavigateToMap, modifier = Modifier.weight(1f))
+                                        MainActionCard(title = "Urgence SOS", icon = Icons.Default.Bolt, color = EmergencyRed, testTag = "home_main_emergency_card", onClick = onNavigateToEmergency, modifier = Modifier.weight(1f))
                                     }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                // Raccourcis pratiques : Mes Rendez-vous & Autour de moi
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    OutlinedButton(
-                                        onClick = onNavigateToBookings,
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-                                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                                } else {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(16.dp), tint = BluePrimary)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            "Mes Rendez-vous",
-                                            fontSize = 11.5.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF1E293B),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        MainActionCard(title = "Garages", icon = Icons.Default.Build, color = Color(0xFF1E40AF), testTag = "home_main_garage_card", onClick = onNavigateToDiscovery, modifier = Modifier.weight(1f))
+                                        MainActionCard(title = "Pièces Auto", icon = Icons.Default.Storefront, color = Color(0xFF0284C7), testTag = "home_main_parts_card", onClick = { onNavigateToCategoryList(ServiceCategory.PIECES) }, modifier = Modifier.weight(1f))
                                     }
-
-                                    OutlinedButton(
-                                        onClick = onNavigateToNearby,
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-                                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF059669))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            "Autour de moi",
-                                            fontSize = 11.5.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF1E293B),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        MainActionCard(title = "Carte GPS", icon = Icons.Default.Map, color = Color(0xFF059669), testTag = "home_main_map_card", onClick = onNavigateToMap, modifier = Modifier.weight(1f))
+                                        MainActionCard(title = "Urgence SOS", icon = Icons.Default.Bolt, color = EmergencyRed, testTag = "home_main_emergency_card", onClick = onNavigateToEmergency, modifier = Modifier.weight(1f))
                                     }
                                 }
                             }
@@ -961,47 +591,75 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Catégories de services",
+                                        text = "Catégories",
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF1F2937)
                                     )
                                     TextButton(onClick = onNavigateToDiscovery) {
-                                        Text("DÉCOUVRIR TOUT", color = BluePrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                        Text("TOUT VOIR", color = BluePrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    CategoryCard(
-                                        modifier = Modifier.weight(1f),
-                                        category = ServiceCategory.MECANICIEN,
-                                        onClick = { onNavigateToCategoryList(ServiceCategory.MECANICIEN) }
-                                    )
-                                    CategoryCard(
-                                        modifier = Modifier.weight(1f),
-                                        category = ServiceCategory.PIECES,
-                                        onClick = { onNavigateToCategoryList(ServiceCategory.PIECES) }
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    CategoryCard(
-                                        modifier = Modifier.weight(1f),
-                                        category = ServiceCategory.PNEUMATIQUE,
-                                        onClick = { onNavigateToCategoryList(ServiceCategory.PNEUMATIQUE) }
-                                    )
-                                    CategoryCard(
-                                        modifier = Modifier.weight(1f),
-                                        category = ServiceCategory.AUTRE,
-                                        onClick = { onNavigateToCategoryList(ServiceCategory.AUTRE) }
-                                    )
+                                if (isTablet) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.MECANICIEN,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.MECANICIEN) }
+                                        )
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.PIECES,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.PIECES) }
+                                        )
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.PNEUMATIQUE,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.PNEUMATIQUE) }
+                                        )
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.AUTRE,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.AUTRE) }
+                                        )
+                                    }
+                                } else {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.MECANICIEN,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.MECANICIEN) }
+                                        )
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.PIECES,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.PIECES) }
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.PNEUMATIQUE,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.PNEUMATIQUE) }
+                                        )
+                                        CategoryCard(
+                                            modifier = Modifier.weight(1f),
+                                            category = ServiceCategory.AUTRE,
+                                            onClick = { onNavigateToCategoryList(ServiceCategory.AUTRE) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1017,7 +675,7 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Top Garages & Mécaniciens",
+                                        text = "Recommandés",
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF1F2937)
@@ -1052,7 +710,7 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Tous les prestataires",
+                                        text = "Prestataires",
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF1F2937)
@@ -1117,9 +775,7 @@ fun HomeScreen(
                 1 -> {
                     // TAB 1: CARTE & PROXIMITE - Interactive Nearby Map Component
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         NearbyMapComponent(
                             modifier = Modifier.fillMaxSize(),
@@ -1134,236 +790,368 @@ fun HomeScreen(
                 2 -> {
                     // TAB 2: MON VEHICULE (Carnet, Diagnostic, RDV, Devis, Tutoriels)
                     LazyColumn(
-                        modifier = Modifier
+                        modifier = contentModifier
                             .fillMaxSize()
-                            .padding(innerPadding)
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         item {
-                            Text("Gestion de mon Véhicule", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
-                            Text("Espace entretien, diagnostic et suivi mécanique", fontSize = 12.sp, color = Color.Gray)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Mon Véhicule", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
+                            Spacer(modifier = Modifier.height(4.dp))
                         }
 
-                        // Carnet d'entretien
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToMaintenanceLog() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF00897B))
-                            ) {
+                        if (isTablet) {
+                            // Row 1: Carnet d'entretien & Mes Rendez-vous
+                            item {
                                 Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Icon(Icons.Default.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToMaintenanceLog() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF00897B))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Carnet d'Entretien",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
+                                        }
+                                    }
+
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToBookings() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = BluePrimary)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Event, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Rendez-vous",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Row 2: Remorquage SOS & Devis
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToTowingRequest() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = EmergencyRed)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.LocalShipping, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Remorquage SOS",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
+                                        }
+                                    }
+
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToCostEstimator() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E88E5))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Calculate, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Devis & Estimations",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Row 3: Tutoriels & Bilan de Santé
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToTutorials() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF15803D))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.OfflinePin, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Tutoriels",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
+                                        }
+                                    }
+
+                                    Card(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToVehicleHealthReport() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0284C7))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Verified, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Bilan de Santé",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // Carnet d'entretien
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToMaintenanceLog() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF00897B))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Text(
                                             "Carnet d'Entretien",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            "Rappels de vidange, filtres & suivi révision",
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            fontSize = 12.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
                             }
-                        }
 
-                        // Mes Rendez-vous
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToBookings() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = BluePrimary)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Mes Rendez-vous
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToBookings() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = BluePrimary)
                                 ) {
-                                    Icon(Icons.Default.Event, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.Event, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Text(
-                                            "Mes Rendez-vous Garage",
+                                            "Rendez-vous",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            "Gérer mes réservations en atelier",
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            fontSize = 12.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
                             }
-                        }
 
-                        // Remorquage Express
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToTowingRequest() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = EmergencyRed)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Remorquage Express
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToTowingRequest() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = EmergencyRed)
                                 ) {
-                                    Icon(Icons.Default.LocalShipping, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.LocalShipping, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Text(
-                                            "Demande de Remorquage 24/7",
+                                            "Remorquage SOS",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            "Dépannage d'urgence sur route",
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            fontSize = 12.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
                             }
-                        }
 
-                        // Estimations & Devis FCFA
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToCostEstimator() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E88E5))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Estimations & Devis FCFA
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToCostEstimator() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E88E5))
                                 ) {
-                                    Icon(Icons.Default.Calculate, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.Calculate, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Text(
-                                            "Estimations Devis FCFA",
+                                            "Devis & Estimations",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            "Calculateur de prix moyen des pièces & réparations",
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            fontSize = 12.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
                             }
-                        }
 
-                        // Tutoriels Hors Ligne
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToTutorials() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF15803D))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Tutoriels Hors Ligne
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToTutorials() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF15803D))
                                 ) {
-                                    Icon(Icons.Default.OfflinePin, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.OfflinePin, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Text(
-                                            "Tutoriels & Guides Hors-Ligne",
+                                            "Tutoriels",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            "Auto-dépannage pas-à-pas accessible sans réseau",
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            fontSize = 12.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
                             }
-                        }
 
-                        // Bilan de Santé PDF
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToVehicleHealthReport() },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0284C7))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Bilan de Santé PDF
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onNavigateToVehicleHealthReport() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0284C7))
                                 ) {
-                                    Icon(Icons.Default.Verified, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    Spacer(modifier = Modifier.width(14.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.Verified, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Text(
-                                            "Bilan de Santé Auto (PDF & WhatsApp)",
+                                            "Bilan de Santé",
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
+                                            modifier = Modifier.weight(1f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Text(
-                                            "Générer un rapport complet partageable",
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            fontSize = 12.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
                                 }
                             }
                         }
@@ -1382,6 +1170,7 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp)
             ) {
                 Row(
@@ -1588,6 +1377,57 @@ private fun HelpStepItem(number: String, title: String, description: String) {
             Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = description, fontSize = 12.sp, color = Color(0xFF64748B), lineHeight = 16.sp)
+        }
+    }
+}
+
+@Composable
+fun MainActionCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    testTag: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .clickable { onClick() }
+            .testTag(testTag),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = color),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.2f),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                fontSize = 15.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

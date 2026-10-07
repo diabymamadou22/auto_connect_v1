@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -281,13 +283,25 @@ fun ProviderDiscoveryScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color(0xFFF8FAFC)),
-            contentPadding = PaddingValues(bottom = 80.dp)
+                .background(Color(0xFFF8FAFC))
         ) {
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 840.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            LazyColumn(
+                modifier = contentModifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp)
+            ) {
             // Search Input Header
             item {
                 Surface(
@@ -311,7 +325,7 @@ fun ProviderDiscoveryScreen(
                                     onValueChange = { searchQuery = it },
                                     placeholder = {
                                         Text(
-                                            "Rechercher mécanicien, pièce, quartier...",
+                                            "Rechercher...",
                                             color = Color.Gray,
                                             fontSize = 13.sp
                                         )
@@ -333,123 +347,6 @@ fun ProviderDiscoveryScreen(
                                         .testTag("discovery_search_input")
                                 )
                             }
-                        }
-                    }
-                }
-            }
-
-            // Room Database & Cloud Sync Stats Banner
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                        .testTag("discovery_sync_card"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (isOnline) Color(0xFFEFF6FF) else Color(0xFFFEF3C7),
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                                            contentDescription = null,
-                                            tint = if (isOnline) BluePrimary else Color(0xFFD97706),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Annuaire des Garages & Boutiques",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = "${allServices.size} adresses ($mechanicsCount mécaniciens, $partsShopsCount boutiques)",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF64748B),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-
-                            Button(
-                                onClick = {
-                                    servicesViewModel.syncDataNow { _, msg ->
-                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                enabled = syncStatus !is SyncStatus.Syncing,
-                                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
-                                shape = RoundedCornerShape(20.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                modifier = Modifier.testTag("discovery_sync_button")
-                            ) {
-                                if (syncStatus is SyncStatus.Syncing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(14.dp),
-                                        color = Color.White,
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Synchro...", fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                } else {
-                                    Icon(
-                                        Icons.Default.Sync,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Actualiser", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (isOnline) "🟢 En direct (à jour)" else "🟠 Hors-ligne (enregistré)",
-                                fontSize = 10.sp,
-                                color = if (isOnline) Color(0xFF059669) else Color(0xFFD97706),
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.weight(1f, fill = false),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Actualisé : ${servicesViewModel.getLastSyncFormatted()}",
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
                         }
                     }
                 }
@@ -601,7 +498,7 @@ fun ProviderDiscoveryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${filteredList.size} résultats trouvés",
+                        text = "${filteredList.size} résultats",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = Color(0xFF334155)
@@ -663,7 +560,7 @@ fun ProviderDiscoveryScreen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Essayez d'élargir votre recherche, de changer de quartier ou d'ajouter un nouveau garage à la base.",
+                                text = "Essayez d'élargir votre recherche.",
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -707,6 +604,7 @@ fun ProviderDiscoveryScreen(
             }
         }
     }
+}
 
     // Filter Bottom Sheet
     if (showFilterSheet) {

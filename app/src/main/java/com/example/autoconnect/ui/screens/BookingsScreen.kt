@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -122,12 +126,24 @@ fun BookingsScreen(
             }
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(Color(0xFFF8FAFC))
         ) {
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = contentModifier.fillMaxSize()
+            ) {
             // Filter Chips Bar
             LazyRow(
                 modifier = Modifier
@@ -196,6 +212,7 @@ fun BookingsScreen(
                 }
             }
         }
+    }
 
         // Dialog New Booking
         if (showNewBookingDialog) {
@@ -212,7 +229,12 @@ fun BookingsScreen(
                 onDismissRequest = { showNewBookingDialog = false },
                 title = { Text("Planifier un Rendez-vous", fontWeight = FontWeight.Bold) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         Text("Choisissez le garage / prestataire :", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -181,46 +183,68 @@ fun MaintenanceLogScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Vehicle Header Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = BluePrimary)
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = contentModifier.fillMaxSize()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.2f),
-                                modifier = Modifier.size(44.dp)
+                // Vehicle Header Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = BluePrimary)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f, fill = false),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = Color.White)
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color.White.copy(alpha = 0.2f),
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = Color.White)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = vehicleName,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontSize = 17.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text("Matricule: $licensePlate", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(vehicleName, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 17.sp)
-                                Text("Matricule: $licensePlate", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+
+                            IconButton(onClick = { isEditingVehicle = !isEditingVehicle }) {
+                                Icon(Icons.Default.Build, contentDescription = "Modifier", tint = Color.White)
                             }
                         }
-
-                        IconButton(onClick = { isEditingVehicle = !isEditingVehicle }) {
-                            Icon(Icons.Default.Build, contentDescription = "Modifier", tint = Color.White)
-                        }
-                    }
 
                     if (isEditingVehicle) {
                         Spacer(modifier = Modifier.height(12.dp))
@@ -304,17 +328,17 @@ fun MaintenanceLogScreen(
                 Tab(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
-                    text = { Text("ÉCHÉANCES & RAPPELS", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    text = { Text("Rappels", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1) }
                 )
                 Tab(
                     selected = selectedTabIndex == 1,
                     onClick = { selectedTabIndex = 1 },
-                    text = { Text("HISTORIQUE", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    text = { Text("Historique", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1) }
                 )
                 Tab(
                     selected = selectedTabIndex == 2,
                     onClick = { selectedTabIndex = 2 },
-                    text = { Text("DIAGNOSTIC PANNE", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    text = { Text("Diagnostic", fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1) }
                 )
             }
 
@@ -585,4 +609,5 @@ fun MaintenanceLogScreen(
             }
         }
     }
+}
 }

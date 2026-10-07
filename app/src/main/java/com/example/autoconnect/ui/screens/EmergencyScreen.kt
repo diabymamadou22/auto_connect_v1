@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,9 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,6 +63,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.ui.theme.EmergencyRed
@@ -98,110 +100,153 @@ fun EmergencyScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
         ) {
-            // High Priority Emergency Header Banner
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            val isWide = maxWidth >= 600.dp
+
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 680.dp)
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(EmergencyRed, Color(0xFFB71C1C))
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .padding(20.dp)
+                // High Priority Emergency Header Banner
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(EmergencyRed, Color(0xFFB71C1C))
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(20.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "ASSISTANCE SOS",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 20.sp,
+                                color = Color.White,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Breakdown Type Selector
+                Text("Type de panne", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                if (isWide) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Moteur",
+                            icon = Icons.Default.Engineering,
+                            isSelected = selectedBreakdownType == "Moteur",
+                            onSelect = { selectedBreakdownType = "Moteur" }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "ASSISTANCE IMMÉDIATE",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 20.sp,
-                            color = Color.White,
-                            letterSpacing = 1.sp
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Pneu",
+                            icon = Icons.Default.TireRepair,
+                            isSelected = selectedBreakdownType == "Pneu",
+                            onSelect = { selectedBreakdownType = "Pneu" }
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "En cas de panne ou d'accident, votre position GPS est partagée avec les dépanneurs les plus proches.",
-                            color = Color.White.copy(alpha = 0.9f),
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Batterie",
+                            icon = Icons.Default.BatteryAlert,
+                            isSelected = selectedBreakdownType == "Batterie",
+                            onSelect = { selectedBreakdownType = "Batterie" }
+                        )
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Accident",
+                            icon = Icons.Default.CarCrash,
+                            isSelected = selectedBreakdownType == "Accident",
+                            onSelect = { selectedBreakdownType = "Accident" }
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Moteur",
+                            icon = Icons.Default.Engineering,
+                            isSelected = selectedBreakdownType == "Moteur",
+                            onSelect = { selectedBreakdownType = "Moteur" }
+                        )
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Pneu",
+                            icon = Icons.Default.TireRepair,
+                            isSelected = selectedBreakdownType == "Pneu",
+                            onSelect = { selectedBreakdownType = "Pneu" }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Batterie",
+                            icon = Icons.Default.BatteryAlert,
+                            isSelected = selectedBreakdownType == "Batterie",
+                            onSelect = { selectedBreakdownType = "Batterie" }
+                        )
+                        BreakdownOptionCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Accident",
+                            icon = Icons.Default.CarCrash,
+                            isSelected = selectedBreakdownType == "Accident",
+                            onSelect = { selectedBreakdownType = "Accident" }
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Breakdown Type Selector
-            Text("1. Type de panne", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                BreakdownOptionCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Moteur",
-                    icon = Icons.Default.Engineering,
-                    isSelected = selectedBreakdownType == "Moteur",
-                    onSelect = { selectedBreakdownType = "Moteur" }
-                )
-                BreakdownOptionCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Pneu",
-                    icon = Icons.Default.TireRepair,
-                    isSelected = selectedBreakdownType == "Pneu",
-                    onSelect = { selectedBreakdownType = "Pneu" }
-                )
-                BreakdownOptionCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Batterie",
-                    icon = Icons.Default.BatteryAlert,
-                    isSelected = selectedBreakdownType == "Batterie",
-                    onSelect = { selectedBreakdownType = "Batterie" }
-                )
-                BreakdownOptionCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Accident",
-                    icon = Icons.Default.CarCrash,
-                    isSelected = selectedBreakdownType == "Accident",
-                    onSelect = { selectedBreakdownType = "Accident" }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Location Input
-            Text("2. Votre position actuelle", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Position", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = locationNote,
                 onValueChange = { locationNote = it },
-                label = { Text("Lieu / Repère GPS") },
+                label = { Text("Lieu ou repère") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Main SOS Signal Transmit Button
             Button(
@@ -209,7 +254,7 @@ fun EmergencyScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
+                    .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
             ) {
@@ -220,10 +265,10 @@ fun EmergencyScreen(
                     Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "TRANSMETTRE SIGNAL SOS",
+                        text = "ENVOYER SOS",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
-                        fontSize = 14.5.sp,
+                        fontSize = 15.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -245,18 +290,18 @@ fun EmergencyScreen(
                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Alerte SOS transmise !", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
-                            Text("3 dépanneurs à proximité ont reçu votre position GPS.", fontSize = 12.sp, color = Color(0xFF1B5E20))
+                            Text("SOS envoyé", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                            Text("Dépanneurs notifiés.", fontSize = 12.sp, color = Color(0xFF1B5E20))
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Emergency Call Directory Section
-            Text("Numéros d'urgence directe", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Text("Numéros d'urgence", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(modifier = Modifier.height(10.dp))
 
             emergencyContacts.forEach { contact ->
                 Card(
@@ -306,6 +351,7 @@ fun EmergencyScreen(
                 }
             }
         }
+    }
     }
 
     // Confirmation Alert Dialog

@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -131,12 +133,14 @@ fun DirectChatScreen(
                             }
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = providerName,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
+                                fontSize = 15.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
@@ -148,7 +152,9 @@ fun DirectChatScreen(
                                 Text(
                                     text = "En ligne • Réponse rapide",
                                     color = Color.White.copy(alpha = 0.85f),
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -177,12 +183,24 @@ fun DirectChatScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(Color(0xFFF1F5F9))
         ) {
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = contentModifier.fillMaxSize()
+            ) {
             // Quick Questions Chips
             LazyRow(
                 modifier = Modifier
@@ -291,6 +309,7 @@ fun DirectChatScreen(
             }
         }
     }
+}
 }
 
 @Composable

@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -104,9 +106,9 @@ fun CostEstimatorScreen(
     // Vehicle Category Multiplier (Citadine x1.0, SUV/4x4 x1.35, Utilitaire/Camionette x1.5)
     var vehicleCategory by remember { mutableStateOf("SUV / 4x4") }
     val categoryMultiplier = when (vehicleCategory) {
-        "Citadine (Toyota Yaris, etc.)" -> 1.0
-        "SUV / 4x4 (Prado, RAV4, Pick-up)" -> 1.35
-        "Utilitaire / Camionette" -> 1.5
+        "Citadine" -> 1.0
+        "SUV / 4x4" -> 1.35
+        "Utilitaire" -> 1.5
         else -> 1.15
     }
 
@@ -169,7 +171,7 @@ fun CostEstimatorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Estimations & Devis Mali", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Devis & Estimations", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Retour", tint = Color.White)
@@ -179,12 +181,24 @@ fun CostEstimatorScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Navigation Tabs
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 720.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            Column(
+                modifier = contentModifier.fillMaxSize()
+            ) {
+                // Navigation Tabs
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.White,
@@ -199,12 +213,12 @@ fun CostEstimatorScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("ESTIMATEUR DE DEVIS", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    text = { Text("ESTIMATEUR", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("CONSEILS & SÉCURITÉ MALI", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    text = { Text("CONSEILS", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
                 )
             }
 
@@ -228,12 +242,12 @@ fun CostEstimatorScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = BluePrimary)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("1. Type de Véhicule", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        Text("Type de Véhicule", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     }
 
                                     Spacer(modifier = Modifier.height(10.dp))
 
-                                    val categories = listOf("Citadine (Toyota Yaris, etc.)", "SUV / 4x4 (Prado, RAV4, Pick-up)", "Utilitaire / Camionette")
+                                    val categories = listOf("Citadine", "SUV / 4x4", "Utilitaire")
                                     categories.forEach { cat ->
                                         Row(
                                             modifier = Modifier
@@ -260,7 +274,7 @@ fun CostEstimatorScreen(
 
                         // Repair Services Selection
                         item {
-                            Text("2. Sélectionnez les réparations à effectuer", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1F2937))
+                            Text("Prestations & Réparations", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1F2937))
                         }
 
                         items(repairCatalog) { repair ->
@@ -486,4 +500,5 @@ fun CostEstimatorScreen(
             }
         }
     }
+}
 }

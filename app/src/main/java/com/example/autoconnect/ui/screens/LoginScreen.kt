@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -170,7 +171,7 @@ fun LoginScreen(
             )
 
             Text(
-                text = "Votre assistant auto nouvelle génération au Mali",
+                text = "Services & Dépannage Auto",
                 color = Color(0xFF64748B),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -182,6 +183,7 @@ fun LoginScreen(
             // Polished White Card
             Card(
                 modifier = Modifier
+                    .widthIn(max = 480.dp)
                     .fillMaxWidth()
                     .border(
                         width = 1.dp,
@@ -214,7 +216,7 @@ fun LoginScreen(
                             onClick = { selectedTabIndex = 0; authViewModel.clearError() },
                             text = {
                                 Text(
-                                    "CONNEXION",
+                                    "Connexion",
                                     color = if (selectedTabIndex == 0) BluePrimary else Color(0xFF64748B),
                                     fontWeight = FontWeight.Bold
                                 )
@@ -225,7 +227,7 @@ fun LoginScreen(
                             onClick = { selectedTabIndex = 1; authViewModel.clearError() },
                             text = {
                                 Text(
-                                    "INSCRIPTION",
+                                    "Inscription",
                                     color = if (selectedTabIndex == 1) BluePrimary else Color(0xFF64748B),
                                     fontWeight = FontWeight.Bold
                                 )

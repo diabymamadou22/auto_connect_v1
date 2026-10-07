@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -103,7 +105,7 @@ fun VehicleHealthReportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bilan de Santé Auto & Certificat Digital", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+                title = { Text("Bilan de Santé", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Retour", tint = Color.White)
@@ -113,14 +115,26 @@ fun VehicleHealthReportScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color(0xFFF8FAFC)),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(Color(0xFFF8FAFC))
         ) {
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 680.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            LazyColumn(
+                modifier = contentModifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Vehicle Details Input Bar
             item {
                 Card(
@@ -130,7 +144,7 @@ fun VehicleHealthReportScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Informations du Véhicule Inspecté", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Véhicule", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -155,7 +169,7 @@ fun VehicleHealthReportScreen(
                         OutlinedTextField(
                             value = mileage,
                             onValueChange = { mileage = it },
-                            label = { Text("Kilométrage Actuel") },
+                            label = { Text("Kilométrage") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -179,10 +193,10 @@ fun VehicleHealthReportScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Verified, contentDescription = null, tint = Color(0xFF4ADE80), modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Score Global de Fiabilité", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("Score de Fiabilité", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text("Certificat d'état général valide", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("Certificat valide", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text("AutoConnect Approved", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
 
@@ -213,7 +227,7 @@ fun VehicleHealthReportScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Points de Contrôle Technique (${systemChecks.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Points de Contrôle (${systemChecks.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(12.dp))
 
                         systemChecks.forEach { check ->
@@ -302,6 +316,7 @@ fun VehicleHealthReportScreen(
             }
         }
     }
+}
 }
 
 data class HealthCheckItem(

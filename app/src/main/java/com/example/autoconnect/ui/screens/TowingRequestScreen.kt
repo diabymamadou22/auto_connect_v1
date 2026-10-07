@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -117,14 +119,26 @@ fun TowingRequestScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color(0xFFF8FAFC)),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(Color(0xFFF8FAFC))
         ) {
+            val isWide = maxWidth >= 600.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 680.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            LazyColumn(
+                modifier = contentModifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Emergency Header Banner
             item {
                 Card(
@@ -147,8 +161,8 @@ fun TowingRequestScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Service d'Urgence Remorquage Bamako", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("Assistance plateau & dépanneuse géolocalisée 24h/24", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("Service de Remorquage", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("Assistance 24h/24", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -167,7 +181,7 @@ fun TowingRequestScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.LocationOn, contentDescription = null, tint = EmergencyRed)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Lieu de la panne (Quartier / Zone)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Lieu de la panne", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -198,14 +212,14 @@ fun TowingRequestScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Détails du véhicule & Problème", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Véhicule & Panne", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
                             Spacer(modifier = Modifier.height(12.dp))
 
                             OutlinedTextField(
                                 value = vehicleModel,
                                 onValueChange = { vehicleModel = it },
-                                label = { Text("Marque & Modèle du véhicule") },
+                                label = { Text("Marque & Modèle") },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -251,7 +265,7 @@ fun TowingRequestScreen(
                             OutlinedTextField(
                                 value = userPhone,
                                 onValueChange = { userPhone = it },
-                                label = { Text("Votre numéro pour le chauffeur") },
+                                label = { Text("Numéro de téléphone") },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -273,7 +287,7 @@ fun TowingRequestScreen(
                         Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "DEMANDER UNE DÉPANNEUSE",
+                            text = "DEMANDER UN REMORQUAGE",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             maxLines = 1,
@@ -306,17 +320,17 @@ fun TowingRequestScreen(
                                 1 -> {
                                     Text("Localisation de la dépanneuse la plus proche...", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     Spacer(modifier = Modifier.height(6.dp))
-                                    Text("Zone recherchée : $selectedDistrict", fontSize = 12.sp, color = Color.Gray)
+                                    Text("Zone : $selectedDistrict", fontSize = 12.sp, color = Color.Gray)
                                 }
                                 2 -> {
-                                    Text("Chauffeur trouvé ! Attribution en cours...", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2E7D32))
+                                    Text("Chauffeur trouvé !", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF2E7D32))
                                     Spacer(modifier = Modifier.height(6.dp))
-                                    Text("Chauffeur : Ousmane Traoré (Plateau Remorquage Mali)", fontSize = 12.sp)
+                                    Text("Chauffeur : Ousmane Traoré", fontSize = 12.sp)
                                 }
                                 3 -> {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(48.dp))
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("DÉPANNEUSE EN ROUTE EN EXCLUSIVITÉ", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF2E7D32), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("Dépanneuse en route", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF2E7D32), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text("Arrivée estimée : 12 - 15 minutes", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = EmergencyRed)
                                     Spacer(modifier = Modifier.height(16.dp))
@@ -415,4 +429,5 @@ fun TowingRequestScreen(
             }
         }
     }
+}
 }

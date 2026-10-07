@@ -154,11 +154,24 @@ fun ProviderDetailScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val isWide = maxWidth >= 600.dp
+            val isNarrow = maxWidth < 360.dp
+            val contentModifier = if (isWide) {
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.TopCenter)
+            } else {
+                Modifier.fillMaxWidth()
+            }
+
+            LazyColumn(
+                modifier = contentModifier.fillMaxSize()
+            ) {
             // Hero Image Header
             item {
                 Box(
@@ -259,60 +272,124 @@ fun ProviderDetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Quick Action Buttons (Call, WhatsApp, Map, Chat)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            ActionButton(
-                                modifier = Modifier.weight(1f),
-                                title = "Appeler",
-                                icon = Icons.Default.Call,
-                                color = Color(0xFF4CAF50),
-                                onClick = {
-                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${provider.phone}"))
-                                    context.startActivity(intent)
+                        // Quick Action Buttons (Call, WhatsApp, Map, Chat) - Adaptive for all screens
+                        if (isNarrow) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    ActionButton(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Appeler",
+                                        icon = Icons.Default.Call,
+                                        color = Color(0xFF4CAF50),
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${provider.phone}"))
+                                            context.startActivity(intent)
+                                        }
+                                    )
+                                    ActionButton(
+                                        modifier = Modifier.weight(1f),
+                                        title = "WhatsApp",
+                                        icon = Icons.Default.Chat,
+                                        color = Color(0xFF25D366),
+                                        onClick = {
+                                            val cleanNumber = provider.phone.replace(" ", "").replace("+", "")
+                                            val url = "https://wa.me/$cleanNumber"
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                            try {
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, "WhatsApp non installé", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
                                 }
-                            )
-
-                            ActionButton(
-                                modifier = Modifier.weight(1f),
-                                title = "WhatsApp",
-                                icon = Icons.Default.Chat,
-                                color = Color(0xFF25D366),
-                                onClick = {
-                                    val cleanNumber = provider.phone.replace(" ", "").replace("+", "")
-                                    val url = "https://wa.me/$cleanNumber"
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                    try {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    ActionButton(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Itinéraire",
+                                        icon = Icons.Default.Navigation,
+                                        color = Color(0xFF7C3AED),
+                                        onClick = {
+                                            val uri = Uri.parse("geo:${provider.latitude},${provider.longitude}?q=${provider.latitude},${provider.longitude}(${Uri.encode(provider.name)})")
+                                            val intent = Intent(Intent.ACTION_VIEW, uri)
+                                            context.startActivity(intent)
+                                        }
+                                    )
+                                    ActionButton(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Message",
+                                        icon = Icons.Default.Chat,
+                                        color = BluePrimary,
+                                        onClick = {
+                                            onNavigateToChat(provider.id)
+                                        }
+                                    )
+                                }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                ActionButton(
+                                    modifier = Modifier.weight(1f),
+                                    title = "Appeler",
+                                    icon = Icons.Default.Call,
+                                    color = Color(0xFF4CAF50),
+                                    onClick = {
+                                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${provider.phone}"))
                                         context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "WhatsApp non installé", Toast.LENGTH_SHORT).show()
                                     }
-                                }
-                            )
+                                )
 
-                            ActionButton(
-                                modifier = Modifier.weight(1f),
-                                title = "Itinéraire",
-                                icon = Icons.Default.Navigation,
-                                color = Color(0xFF7C3AED),
-                                onClick = {
-                                    val uri = Uri.parse("geo:${provider.latitude},${provider.longitude}?q=${provider.latitude},${provider.longitude}(${Uri.encode(provider.name)})")
-                                    val intent = Intent(Intent.ACTION_VIEW, uri)
-                                    context.startActivity(intent)
-                                }
-                            )
+                                ActionButton(
+                                    modifier = Modifier.weight(1f),
+                                    title = "WhatsApp",
+                                    icon = Icons.Default.Chat,
+                                    color = Color(0xFF25D366),
+                                    onClick = {
+                                        val cleanNumber = provider.phone.replace(" ", "").replace("+", "")
+                                        val url = "https://wa.me/$cleanNumber"
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "WhatsApp non installé", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
 
-                            ActionButton(
-                                modifier = Modifier.weight(1f),
-                                title = "Message",
-                                icon = Icons.Default.Chat,
-                                color = BluePrimary,
-                                onClick = {
-                                    onNavigateToChat(provider.id)
-                                }
-                            )
+                                ActionButton(
+                                    modifier = Modifier.weight(1f),
+                                    title = "Itinéraire",
+                                    icon = Icons.Default.Navigation,
+                                    color = Color(0xFF7C3AED),
+                                    onClick = {
+                                        val uri = Uri.parse("geo:${provider.latitude},${provider.longitude}?q=${provider.latitude},${provider.longitude}(${Uri.encode(provider.name)})")
+                                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                                        context.startActivity(intent)
+                                    }
+                                )
+
+                                ActionButton(
+                                    modifier = Modifier.weight(1f),
+                                    title = "Message",
+                                    icon = Icons.Default.Chat,
+                                    color = BluePrimary,
+                                    onClick = {
+                                        onNavigateToChat(provider.id)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -1011,9 +1088,9 @@ fun ClientBookingSheetContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text("Réserver un Rendez-vous", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0F172A))
-                Text("Chez ${provider.name} (${provider.city})", fontSize = 12.sp, color = BluePrimary, fontWeight = FontWeight.Medium)
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Réserver un Rendez-vous", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0F172A), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Chez ${provider.name} (${provider.city})", fontSize = 12.sp, color = BluePrimary, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             IconButton(onClick = onCancel) {
                 Icon(Icons.Default.Close, contentDescription = "Fermer")
