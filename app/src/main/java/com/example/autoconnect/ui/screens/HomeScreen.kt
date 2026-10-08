@@ -157,6 +157,7 @@ fun HomeScreen(
     onNavigateToChatList: () -> Unit,
     onNavigateToDiscovery: () -> Unit = {},
     onNavigateToMechanicSearch: () -> Unit = {},
+    onNavigateToAppDistribution: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -316,6 +317,17 @@ fun HomeScreen(
                     onClick = {
                         scope.launch { drawerState.close() }
                         showHelpDialog = true
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color(0xFF009A44)) },
+                    label = { Text("Partager & Mises à jour", fontWeight = FontWeight.SemiBold, color = Color(0xFF009A44)) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAppDistribution()
                     },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )

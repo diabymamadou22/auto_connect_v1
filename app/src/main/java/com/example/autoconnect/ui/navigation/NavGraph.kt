@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import com.example.autoconnect.data.model.ServiceCategory
 import com.example.autoconnect.ui.screens.AddServiceScreen
 import com.example.autoconnect.ui.screens.AdminDashboardScreen
+import com.example.autoconnect.ui.screens.AppDistributionScreen
 import com.example.autoconnect.ui.screens.BookingsScreen
 import com.example.autoconnect.ui.screens.ChatListScreen
 import com.example.autoconnect.ui.screens.CostEstimatorScreen
@@ -62,6 +63,7 @@ sealed class Screen(val route: String) {
     object DirectChat : Screen("direct_chat/{providerId}") {
         fun createRoute(providerId: String) = "direct_chat/$providerId"
     }
+    object AppDistribution : Screen("app_distribution")
 }
 
 @Composable
@@ -153,6 +155,9 @@ fun NavGraph(
                 },
                 onNavigateToMechanicSearch = {
                     navController.navigate(Screen.MechanicSearch.route)
+                },
+                onNavigateToAppDistribution = {
+                    navController.navigate(Screen.AppDistribution.route)
                 },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
@@ -364,6 +369,12 @@ fun NavGraph(
                     navController.navigate(Screen.Bookings.route)
                 },
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AppDistribution.route) {
+            AppDistributionScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
