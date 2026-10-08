@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -121,7 +123,9 @@ fun LocalMechanicSearchComponent(
         val combinedQuery = if (selectedSpecialty != "Tous") {
             if (searchQuery.isNotBlank()) "$searchQuery $selectedSpecialty" else selectedSpecialty
         } else {
+            
             searchQuery
+
         }
 
         searchService.searchMechanicsRealtime(
@@ -140,11 +144,23 @@ fun LocalMechanicSearchComponent(
         }
     }
 
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFC))
     ) {
+        val isWide = maxWidth >= 600.dp
+        val contentModifier = if (isWide) {
+            Modifier
+                .widthIn(max = 840.dp)
+                .align(Alignment.TopCenter)
+        } else {
+            Modifier.fillMaxWidth()
+        }
+
+        Column(
+            modifier = contentModifier.fillMaxSize()
+        ) {
         // Top Firestore Search Banner
         Card(
             modifier = Modifier
@@ -318,35 +334,39 @@ fun LocalMechanicSearchComponent(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Toggle Quick Filters: Open now & High Rating
-                Row(
+                // Toggle Quick Filters: Open now & High Rating - Scrollable/Adaptive
+                LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(
-                        selected = onlyOpenNow,
-                        onClick = { onlyOpenNow = !onlyOpenNow },
-                        label = { Text("Ouvert maintenant", fontSize = 11.sp) },
-                        leadingIcon = {
-                            if (onlyOpenNow) {
-                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
-                            }
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFFDCFCE7),
-                            selectedLabelColor = Color(0xFF166534)
+                    item {
+                        FilterChip(
+                            selected = onlyOpenNow,
+                            onClick = { onlyOpenNow = !onlyOpenNow },
+                            label = { Text("Ouvert maintenant", fontSize = 11.sp) },
+                            leadingIcon = {
+                                if (onlyOpenNow) {
+                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                                }
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFDCFCE7),
+                                selectedLabelColor = Color(0xFF166534)
+                            )
                         )
-                    )
+                    }
 
-                    FilterChip(
-                        selected = minRating >= 4.5,
-                        onClick = { minRating = if (minRating >= 4.5) 0.0 else 4.5 },
-                        label = { Text("⭐ 4.5+ étoiles", fontSize = 11.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFFFEF3C7),
-                            selectedLabelColor = Color(0xFF92400E)
+                    item {
+                        FilterChip(
+                            selected = minRating >= 4.5,
+                            onClick = { minRating = if (minRating >= 4.5) 0.0 else 4.5 },
+                            label = { Text("⭐ 4.5+ étoiles", fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFFEF3C7),
+                                selectedLabelColor = Color(0xFF92400E)
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -453,6 +473,7 @@ fun LocalMechanicSearchComponent(
         }
     }
 }
+}
 
 /**
  * Individual Mali Mechanic Card with verified badges, rating, services, and direct CUJ actions.
@@ -499,7 +520,8 @@ fun MaliMechanicCard(
                             fontSize = 16.sp,
                             color = Color(0xFF0F172A),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(

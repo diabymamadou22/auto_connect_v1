@@ -1357,6 +1357,7 @@ fun HomeScreen(
         )
     }
 }
+}
 
 @Composable
 private fun HelpStepItem(number: String, title: String, description: String) {
