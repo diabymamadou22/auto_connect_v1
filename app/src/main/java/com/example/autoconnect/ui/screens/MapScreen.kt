@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.webkit.JavascriptInterface
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -117,6 +118,7 @@ fun MapScreen(
     var selectedProvider by remember { mutableStateOf<ServiceProvider?>(null) }
 
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+    var hasRenderError by remember { mutableStateOf(false) }
 
     BackHandler {
         if (selectedProvider != null) {
@@ -309,7 +311,7 @@ fun MapScreen(
                         settings.setSupportZoom(true)
                         settings.builtInZoomControls = true
                         settings.displayZoomControls = false
-                        settings.cacheMode = WebSettings.LOAD_DEFAULT
+                        settings.cacheMode = WebSettings.LOAD_NO_CACHE
 
                         val bridge = object {
                             @JavascriptInterface
@@ -342,6 +344,16 @@ fun MapScreen(
                                 val json = buildServicesJson(displayedServices)
                                 view?.evaluateJavascript("updateMarkersData($json);", null)
                             }
+
+                            override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                                try {
+                                    view?.stopLoading()
+                                    view?.destroy()
+                                } catch (_: Throwable) {}
+                                webViewInstance = null
+                                hasRenderError = true
+                                return true
+                            }
                         }
 
                         val html = buildGoogleMapsHtml(displayedServices, userLat, userLng, isSatelliteMode)
@@ -359,6 +371,57 @@ fun MapScreen(
                     } catch (_: Throwable) {}
                 }
             )
+
+            if (hasRenderError) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 90.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    shadowElevation = 6.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = BluePrimary,
+                            modifier = Modifier.size(52.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Mode GPS Optimisé",
+                            fontSize = 18.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${displayedServices.size} garages et boutiques identifiés à Bamako",
+                            fontSize = 13.sp,
+                            color = Color(0xFF64748B),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(
+                            onClick = {
+                                hasRenderError = false
+                                webViewInstance?.reload()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Recharger la carte")
+                        }
+                    }
+                }
+            }
 
             // Top Overlay: Category Filter Chips & Info Pill
             Column(
@@ -913,6 +976,9 @@ private fun buildGoogleMapsHtml(
 <body>
     <div id="map"></div>
 
+    <script>
+        window.L_DISABLE_3D = true;
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         var map;

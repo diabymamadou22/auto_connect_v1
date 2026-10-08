@@ -7,6 +7,7 @@ import android.content.Intent
 import android.location.LocationManager
 import android.net.Uri
 import android.webkit.JavascriptInterface
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -130,6 +131,7 @@ fun NearbyMapComponent(
     var isSatelliteMode by remember { mutableStateOf(false) }
     var selectedProvider by remember { mutableStateOf<ServiceProvider?>(null) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+    var hasRenderError by remember { mutableStateOf(false) }
 
     // Geolocation permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -221,13 +223,23 @@ fun NearbyMapComponent(
                         settings.domStorageEnabled = true
                         settings.loadWithOverviewMode = true
                         settings.useWideViewPort = true
-                        settings.cacheMode = WebSettings.LOAD_DEFAULT
+                        settings.cacheMode = WebSettings.LOAD_NO_CACHE
 
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
                                 val jsonArray = buildServicesJson(displayedServices)
                                 view?.evaluateJavascript("updateMarkersData($jsonArray);", null)
+                            }
+
+                            override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                                try {
+                                    view?.stopLoading()
+                                    view?.destroy()
+                                } catch (_: Throwable) {}
+                                webViewInstance = null
+                                hasRenderError = true
+                                return true
                             }
                         }
 
@@ -268,6 +280,57 @@ fun NearbyMapComponent(
                     } catch (_: Throwable) {}
                 }
             )
+
+            if (hasRenderError) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 90.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    shadowElevation = 4.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = BluePrimary,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Mode Radar Proximité",
+                            fontSize = 17.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${displayedServices.size} professionnels à proximité de Bamako",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(
+                            onClick = {
+                                hasRenderError = false
+                                webViewInstance?.reload()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Recharger la carte")
+                        }
+                    }
+                }
+            }
 
             // Top Overlay: Filter Chips & Search Bar
             Column(
@@ -754,6 +817,9 @@ private fun buildNearbyMapHtml(
 <body>
     <div id="map"></div>
 
+    <script>
+        window.L_DISABLE_3D = true;
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         var map;

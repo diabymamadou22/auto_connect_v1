@@ -11,6 +11,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE LOWER(username) = LOWER(:username) LIMIT 1")
     suspend fun getUserByUsername(username: String): UserEntity?
 
+    @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+    suspend fun getUserById(id: String): UserEntity?
+
     @Query("SELECT * FROM users")
     suspend fun getAllUsers(): List<UserEntity>
 
@@ -19,6 +22,15 @@ interface UserDao {
 
     @Query("UPDATE users SET passwordHash = :passwordHash WHERE LOWER(username) = LOWER(:username)")
     suspend fun updatePassword(username: String, passwordHash: String)
+
+    @Query("UPDATE users SET passwordHash = :passwordHash WHERE id = :id")
+    suspend fun updatePasswordById(id: String, passwordHash: String)
+
+    @Query("UPDATE users SET username = :username, passwordHash = :passwordHash WHERE id = :id")
+    suspend fun updateUserCredentials(id: String, username: String, passwordHash: String)
+
+    @Query("UPDATE users SET username = :username WHERE id = :id")
+    suspend fun updateUsername(id: String, username: String)
 
     @Query("SELECT * FROM users WHERE role = :role")
     suspend fun getUsersByRole(role: String): List<UserEntity>

@@ -224,6 +224,79 @@ class AutoConnectRepository(
         return true
     }
 
+    suspend fun getAssociatedUsernameForProvider(providerId: String): String? {
+        val user = userDao.getUserById(providerId)
+        if (user != null) return user.username
+
+        val service = serviceDao.getServiceById(providerId) ?: return null
+        val phoneClean = service.phone.replace(" ", "").replace("+", "").lowercase()
+        val phoneUser = userDao.getUserByUsername(phoneClean)
+        return phoneUser?.username
+    }
+
+    suspend fun updateGarageNameAndPassword(
+        providerId: String,
+        newName: String,
+        username: String,
+        newPassword: String?
+    ): Result<Unit> {
+        return try {
+            val service = serviceDao.getServiceById(providerId)
+                ?: return Result.failure(IllegalArgumentException("Garage introuvable"))
+
+            // 1. Mettre à jour le nom du garage dans la base de données
+            val trimmedName = newName.trim()
+            if (trimmedName.isNotBlank() && trimmedName != service.name) {
+                val updatedService = service.copy(name = trimmedName)
+                updateService(updatedService.toDomainModel())
+            }
+
+            // 2. Mettre à jour les identifiants du garage (mot de passe / username)
+            val normalizedUsername = username.trim().lowercase()
+            val existingUserById = userDao.getUserById(providerId)
+            val userWithSameName = userDao.getUserByUsername(normalizedUsername)
+
+            if (userWithSameName != null && userWithSameName.id != providerId && (existingUserById == null || userWithSameName.id != existingUserById.id)) {
+                return Result.failure(IllegalArgumentException("Le nom d'utilisateur '$normalizedUsername' est déjà attribué."))
+            }
+
+            if (!newPassword.isNullOrBlank()) {
+                val newHash = PasswordHasher.hash(normalizedUsername, newPassword.trim())
+                if (existingUserById != null) {
+                    userDao.updateUserCredentials(existingUserById.id, normalizedUsername, newHash)
+                } else if (userWithSameName != null) {
+                    userDao.updatePassword(normalizedUsername, newHash)
+                } else {
+                    userDao.insertUser(
+                        UserEntity(
+                            id = providerId,
+                            username = normalizedUsername,
+                            passwordHash = newHash,
+                            role = "prestataire"
+                        )
+                    )
+                }
+            } else {
+                if (existingUserById != null && existingUserById.username != normalizedUsername) {
+                    userDao.updateUsername(existingUserById.id, normalizedUsername)
+                } else if (existingUserById == null && userWithSameName == null) {
+                    val defaultHash = PasswordHasher.hash(normalizedUsername, "00223")
+                    userDao.insertUser(
+                        UserEntity(
+                            id = providerId,
+                            username = normalizedUsername,
+                            passwordHash = defaultHash,
+                            role = "prestataire"
+                        )
+                    )
+                }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getAllUsers(): List<AppUser> {
         return userDao.getAllUsers().map { AppUser(id = it.id, username = it.username, role = it.role) }
     }

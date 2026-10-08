@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.KeyOff
 import androidx.compose.material.icons.filled.LocationOn
@@ -51,10 +52,12 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -70,6 +73,9 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -86,8 +92,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autoconnect.data.model.Review
@@ -165,6 +169,14 @@ fun AdminDashboardScreen(
     var newAdminPassword by remember { mutableStateOf("") }
     var confirmAdminPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // State for Editing Garage Name & Password
+    var editingProvider by remember { mutableStateOf<ServiceProvider?>(null) }
+    var editGarageName by remember { mutableStateOf("") }
+    var editGarageUsername by remember { mutableStateOf("") }
+    var editGaragePassword by remember { mutableStateOf("") }
+    var editPasswordVisible by remember { mutableStateOf(false) }
+    var isSavingGarage by remember { mutableStateOf(false) }
 
     val cities = listOf("Bamako", "Sikasso", "Ségou", "Mopti", "Gao", "Kayes", "Koutiala")
 
@@ -288,9 +300,10 @@ fun AdminDashboardScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 8.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                    .padding(bottom = 10.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -299,9 +312,42 @@ fun AdminDashboardScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(provider.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text("${provider.category.title} • ${provider.city} • ${provider.phone}", color = Color.Gray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(
+                                            provider.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            "${provider.category.title} • ${provider.city} • ${provider.phone}",
+                                            color = Color(0xFF64748B),
+                                            fontSize = 12.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
+
+                                    // Button to Edit Garage Name and Password
+                                    IconButton(
+                                        onClick = {
+                                            editingProvider = provider
+                                            editGarageName = provider.name
+                                            editGaragePassword = ""
+                                            editPasswordVisible = false
+                                            editGarageUsername = provider.phone.replace(" ", "").replace("+", "").lowercase().ifBlank { "garage_${provider.id}" }
+                                            authViewModel.getGarageUsername(provider.id) { existingUser ->
+                                                if (!existingUser.isNullOrBlank()) {
+                                                    editGarageUsername = existingUser
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Modifier", tint = Color(0xFF6A1B9A))
+                                    }
+
                                     IconButton(
                                         onClick = {
                                             servicesViewModel.deleteService(provider.id)
@@ -780,6 +826,169 @@ fun AdminDashboardScreen(
                 }
             }
         }
+    }
+
+    editingProvider?.let { provider ->
+        AlertDialog(
+            onDismissRequest = {
+                if (!isSavingGarage) editingProvider = null
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = Color(0xFF6A1B9A),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Modifier le Garage",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF1E293B)
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Modifiez le nom de l'établissement ainsi que le mot de passe de connexion pour ce prestataire.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+
+                    OutlinedTextField(
+                        value = editGarageName,
+                        onValueChange = { editGarageName = it },
+                        label = { Text("Nom du garage") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Business, contentDescription = null, tint = Color(0xFF6A1B9A))
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = editGarageUsername,
+                        onValueChange = { editGarageUsername = it },
+                        label = { Text("Identifiant (Connexion Pro)") },
+                        leadingIcon = {
+                            Icon(Icons.Default.AlternateEmail, contentDescription = null, tint = Color(0xFF6A1B9A))
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = editGaragePassword,
+                        onValueChange = { editGaragePassword = it },
+                        label = { Text("Nouveau mot de passe") },
+                        placeholder = { Text("Laisser vide pour ne pas modifier", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFF6A1B9A))
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { editPasswordVisible = !editPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (editPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (editPasswordVisible) "Masquer" else "Afficher",
+                                    tint = Color.Gray
+                                )
+                            }
+                        },
+                        visualTransformation = if (editPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            val randomPin = (1000..9999).random()
+                            editGaragePassword = "mali$randomPin"
+                            editPasswordVisible = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.Key, contentDescription = null, tint = Color(0xFF6A1B9A), modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Générer un mot de passe rapide", fontSize = 12.sp, color = Color(0xFF6A1B9A))
+                    }
+
+                    Surface(
+                        color = Color(0xFFF3E5F5),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF6A1B9A), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Ce mot de passe permettra au gérant d'accéder au Portail Prestataire.",
+                                fontSize = 11.sp,
+                                color = Color(0xFF4A148C)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (editGarageName.isBlank()) {
+                            Toast.makeText(context, "Veuillez saisir le nom du garage", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        if (editGarageUsername.isBlank()) {
+                            Toast.makeText(context, "Veuillez saisir un identifiant", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        isSavingGarage = true
+                        authViewModel.updateGarageNameAndPassword(
+                            providerId = provider.id,
+                            newName = editGarageName,
+                            username = editGarageUsername,
+                            newPassword = editGaragePassword.ifBlank { null }
+                        ) { success, errMsg ->
+                            isSavingGarage = false
+                            if (success) {
+                                Toast.makeText(context, "Garage et mot de passe modifiés avec succès !", Toast.LENGTH_SHORT).show()
+                                editingProvider = null
+                            } else {
+                                Toast.makeText(context, errMsg ?: "Erreur de modification", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A)),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !isSavingGarage
+                ) {
+                    if (isSavingGarage) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text("Enregistrer")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { editingProvider = null },
+                    enabled = !isSavingGarage
+                ) {
+                    Text("Annuler", color = Color.Gray)
+                }
+            }
+        )
     }
 }
 }

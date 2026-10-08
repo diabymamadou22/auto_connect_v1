@@ -157,6 +157,36 @@ class AuthViewModel(private val repository: AutoConnectRepository) : ViewModel()
         }
     }
 
+    fun getGarageUsername(providerId: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val username = repository.getAssociatedUsernameForProvider(providerId)
+            onResult(username)
+        }
+    }
+
+    fun updateGarageNameAndPassword(
+        providerId: String,
+        newName: String,
+        username: String,
+        newPassword: String?,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            val result = repository.updateGarageNameAndPassword(providerId, newName, username, newPassword)
+            _isLoading.value = false
+            if (result.isSuccess) {
+                loadPrestataires()
+                onResult(true, null)
+            } else {
+                val err = result.exceptionOrNull()?.message ?: "Erreur de mise à jour"
+                _errorMessage.value = err
+                onResult(false, err)
+            }
+        }
+    }
+
     fun logout() {
         _currentUser.value = null
         _errorMessage.value = null
