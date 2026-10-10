@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -195,13 +196,13 @@ fun LocalMechanicSearchComponent(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Mécaniciens du Mali",
+                                text = "Artisans & Ateliers du Mali",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = Color(0xFF0F172A)
                             )
                             Text(
-                                text = "Base de données Cloud Firestore en direct",
+                                text = "Professionnels certifiés • Contact direct • Suivi en direct",
                                 fontSize = 11.sp,
                                 color = Color(0xFF64748B)
                             )
@@ -592,8 +593,11 @@ fun MaliMechanicCard(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Hours & Open Status
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Hours, Open Status & Community Feedback badge
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = if (mechanic.isOpen) Color(0xFFDCFCE7) else Color(0xFFF1F5F9)
@@ -614,8 +618,37 @@ fun MaliMechanicCard(
                         fontSize = 11.sp,
                         color = Color(0xFF64748B),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Community Trust Badge
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFEFF6FF),
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFFBFDBFE))
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ThumbUp,
+                            contentDescription = null,
+                            tint = BluePrimary,
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = "Avis certifiés",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BluePrimary
+                        )
+                    }
                 }
             }
 

@@ -153,6 +153,9 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
             initialValue = emptyList()
         )
 
+    private val _selectedCategory = MutableStateFlow<ServiceCategory?>(null)
+    val selectedCategory: StateFlow<ServiceCategory?> = _selectedCategory.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -166,16 +169,22 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
     val sortBy: StateFlow<String> = _sortBy.asStateFlow()
 
     val filteredServices: StateFlow<List<ServiceProvider>> = combine(
-        allServices, searchQuery, selectedCity, onlyOpen, sortBy
-    ) { services, query, city, openOnly, sort ->
+        allServices,
+        searchQuery,
+        selectedCity,
+        onlyOpen,
+        combine(sortBy, _selectedCategory) { sort, category -> Pair(sort, category) }
+    ) { services, query, city, openOnly, sortAndCat ->
+        val (sort, category) = sortAndCat
         var list = services.filter { s ->
+            val matchesCategory = category == null || s.category == category
             val matchesQuery = query.isEmpty() ||
                     s.name.contains(query, ignoreCase = true) ||
                     s.description.contains(query, ignoreCase = true) ||
                     s.city.contains(query, ignoreCase = true)
             val matchesCity = city == "Toutes" || s.city.equals(city, ignoreCase = true)
             val matchesOpen = !openOnly || s.isOpen
-            matchesQuery && matchesCity && matchesOpen
+            matchesCategory && matchesQuery && matchesCity && matchesOpen
         }
 
         list = when (sort) {
@@ -190,6 +199,10 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    fun setSelectedCategory(category: ServiceCategory?) {
+        _selectedCategory.value = category
+    }
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -208,6 +221,7 @@ class ServicesViewModel(private val repository: AutoConnectRepository) : ViewMod
     }
 
     fun resetFilters() {
+        _selectedCategory.value = null
         _selectedCity.value = "Toutes"
         _onlyOpen.value = false
         _sortBy.value = "rating"

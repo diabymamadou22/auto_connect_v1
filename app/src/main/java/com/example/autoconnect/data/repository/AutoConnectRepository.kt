@@ -103,7 +103,7 @@ class AutoConnectRepository(
     }
 
     suspend fun seedReviewsIfEmpty() {
-        val existingReviews = reviewDao.getReviewsListForService("p1")
+        val existingReviews = reviewDao.getReviewsListForService("m2")
         if (existingReviews.isEmpty()) {
             com.example.autoconnect.data.SampleData.sampleReviews.forEach { review ->
                 reviewDao.insertReview(review)

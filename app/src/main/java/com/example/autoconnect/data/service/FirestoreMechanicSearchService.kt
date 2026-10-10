@@ -84,6 +84,9 @@ class FirestoreMechanicSearchService(private val context: Context) {
             awaitClose {
                 registration.remove()
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Normal coroutine cancellation when leaving composition or updating query
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error initiating Firestore real-time search: ${e.message}", e)
             val fallback = searchLocalRoomFallback(query, city, onlyOpen, minRating)

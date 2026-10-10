@@ -40,13 +40,13 @@ fun LocalMechanicSearchScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Recherche Spécialisée",
+                            text = "Artisans & Ateliers du Mali",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color.White
                         )
                         Text(
-                            text = "Trouvez un mécanicien ou atelier qualifié au Mali",
+                            text = "Mécaniciens qualifiés, électriciens et spécialistes auto",
                             fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )

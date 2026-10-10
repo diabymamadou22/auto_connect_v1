@@ -349,6 +349,54 @@ object SampleData {
             comment = "⚡ Montage et équilibrage de 4 pneus en moins de 30 minutes. Impeccable !",
             rating = 5.0,
             createdAt = "2026-08-08 11:10"
+        ),
+        com.example.autoconnect.data.local.ReviewEntity(
+            id = "r_6",
+            serviceId = "m2",
+            userName = "Amadou Sanogo",
+            comment = "👨‍🔧 Le meilleur atelier à ACI 2000 ! Passage de la valise diagnostic en 15 min, panne d'allumage résolue. Devis clair et respecté.",
+            rating = 5.0,
+            createdAt = "2026-08-12 15:40"
+        ),
+        com.example.autoconnect.data.local.ReviewEntity(
+            id = "r_7",
+            serviceId = "m2",
+            userName = "Mariam Diarra",
+            comment = "🤝 Très bon accueil, explications claires sur les pièces changées et facture détaillée en FCFA. Je reviendrai sans hésiter.",
+            rating = 4.8,
+            createdAt = "2026-08-15 11:25"
+        ),
+        com.example.autoconnect.data.local.ReviewEntity(
+            id = "r_8",
+            serviceId = "g2",
+            userName = "Bakary Maïga",
+            comment = "❄️ Climatisation rechargée avec détection de fuite. Froid glacial retrouvé en pleine saison chaude à Bamako ! Merci à l'équipe.",
+            rating = 5.0,
+            createdAt = "2026-08-18 14:10"
+        ),
+        com.example.autoconnect.data.local.ReviewEntity(
+            id = "r_9",
+            serviceId = "g2",
+            userName = "Salif Koné",
+            comment = "⚡ Réparation rapide de l'alternateur et démarreur. Prix très correct pour le travail fourni.",
+            rating = 4.5,
+            createdAt = "2026-08-20 16:30"
+        ),
+        com.example.autoconnect.data.local.ReviewEntity(
+            id = "r_10",
+            serviceId = "m1",
+            userName = "Oumar Camara",
+            comment = "🛠️ Dépannage efficace sur la route de Kayes. Vidange propre et changement des plaquettes en urgence.",
+            rating = 4.5,
+            createdAt = "2026-08-22 09:45"
+        ),
+        com.example.autoconnect.data.local.ReviewEntity(
+            id = "r_11",
+            serviceId = "m3",
+            userName = "Kadiatou Touré",
+            comment = "🚙 Révision complète de mon 4x4 avant de partir en brousse vers Sikasso. Suspension et freins au top.",
+            rating = 4.8,
+            createdAt = "2026-08-25 17:15"
         )
     )
 

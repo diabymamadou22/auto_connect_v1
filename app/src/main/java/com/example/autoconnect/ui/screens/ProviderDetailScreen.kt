@@ -62,6 +62,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -121,6 +122,12 @@ fun ProviderDetailScreen(
 
     var userRating by remember { mutableDoubleStateOf(5.0) }
     var commentText by remember { mutableStateOf("") }
+    var filterStar by remember { mutableStateOf<Int?>(null) } // null = All stars
+
+    val displayedReviews = remember(reviews, filterStar) {
+        if (filterStar == null) reviews
+        else reviews.filter { Math.round(it.rating).toInt() == filterStar }
+    }
 
     val imageUrl = when (provider.category) {
         ServiceCategory.PIECES -> "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&q=80&w=600"
@@ -925,25 +932,89 @@ fun ProviderDetailScreen(
                 }
             }
 
-            // Reviews List Header
+            // Reviews List Header & Star Filters
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Avis des clients (${reviews.size})",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color(0xFF0F172A)
-                    )
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Avis des clients (${reviews.size})",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color(0xFF0F172A)
+                        )
+                        if (filterStar != null) {
+                            TextButton(onClick = { filterStar = null }) {
+                                Text("Tous les avis", fontSize = 12.sp, color = BluePrimary, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Star Filter Row
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        item {
+                            Surface(
+                                onClick = { filterStar = null },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (filterStar == null) BluePrimary else Color(0xFFF1F5F9),
+                                border = if (filterStar != null) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)) else null
+                            ) {
+                                Text(
+                                    text = "Tous (${reviews.size})",
+                                    fontSize = 11.sp,
+                                    fontWeight = if (filterStar == null) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (filterStar == null) Color.White else Color(0xFF475569),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+
+                        for (star in 5 downTo 1) {
+                            val count = reviews.count { Math.round(it.rating).toInt() == star }
+                            if (count > 0 || reviews.isNotEmpty()) {
+                                item {
+                                    val isSelected = filterStar == star
+                                    Surface(
+                                        onClick = { filterStar = if (isSelected) null else star },
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isSelected) Color(0xFFD97706) else Color(0xFFF1F5F9),
+                                        border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)) else null
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Star,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color.White else Color(0xFFFFB300),
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text(
+                                                text = "$star ($count)",
+                                                fontSize = 11.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) Color.White else Color(0xFF475569)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            if (reviews.isEmpty()) {
+            if (displayedReviews.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -951,11 +1022,15 @@ fun ProviderDetailScreen(
                             .padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Aucun avis pour l'instant. Soyez le premier à noter ce garage !", color = Color.Gray, fontSize = 13.sp)
+                        Text(
+                            text = if (filterStar != null) "Aucun avis avec $filterStar étoiles pour le moment." else "Aucun avis pour l'instant. Soyez le premier à noter ce garage !",
+                            color = Color.Gray,
+                            fontSize = 13.sp
+                        )
                     }
                 }
             } else {
-                items(reviews, key = { it.id }) { review ->
+                items(displayedReviews, key = { it.id }) { review ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
